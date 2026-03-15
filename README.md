@@ -1,37 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ✿ yEEN ✿
+
+A medical quiz platform for Phase 2a students, inspired by Quesmed. Built with Next.js 16 and styled with a Y2K pixel aesthetic.
+
+## Features
+
+- **Custom Quiz Builder** — select specific topics and subtopics with per-subtopic question counts
+- **Mock Paper Mode** — auto-generates a full paper weighted toward high-yield topics
+- **Exam Mode** — 1.2 minute per question countdown timer
+- **Study Mode** — immediate answer feedback with detailed explanations
+- **Seen/Unseen Tracking** — filters questions you've already attempted via localStorage
+- **PDF Export** — generates a formatted exam paper with full answer key
+- **Flag Questions** — mark questions for later review
+- **Results Dashboard** — score breakdown by topic with flagged question review
+
+## Tech Stack
+
+- Next.js 16 (Turbopack)
+- TypeScript
+- Zustand (quiz session state)
+- jsPDF (PDF generation)
+- CSS variables + styled-jsx (kawaii theme)
 
 ## Getting Started
-
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm run build:topics
+pnpm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Data Format
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Questions are stored in `data/questions.json` as an array:
+```json
+{
+  "id": "card_0001",
+  "topic": "Pathology",
+  "subtopic": "Describe the nature of disease",
+  "question": "...",
+  "options": { "A": "...", "B": "...", "C": "...", "D": "...", "E": "..." },
+  "correct_answer": "C",
+  "feedback": "...",
+  "generated_at": "2026-01-01T00:00:00"
+}
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Run `pnpm run build:topics` after adding new questions to regenerate the topic index.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 # Yeen
