@@ -24,6 +24,14 @@
     "Describe the principles of immunisation and give examples of the different vaccines available and their benefits and drawbacks",
     "Describe how immunological processes develop and become manifest and the consequences for the major organ systems detailed in Phase 2a"
   ],
+  "Pharmacology and Prescribing": [
+    "Describe the key features of pharmacodynamics of drug action (the biochemical and physiological effects of drugs)",
+    "Describe the key features of pharmacokinetics (the administration and subsequent fate of administered substances) and pharmacogenomics",
+    "Describe the mechanism of action and list examples of the following classes of drugs: Cholinergic, Adrenergic, Analgesics (opioids)",
+    "Define the following terms and explain their implications for prescribing and clinical management: Adverse drug reactions, Drug interactions",
+    "Describe the principles of drug discovery and development",
+    "Prescription Writing Early Years GP Prescribing Tasks"
+  ],
   "Microbiology": [
     "Describe the biology and classification of micro-organisms",
     "Gram-positive pathogens",
@@ -198,7 +206,8 @@
     "ILA 11 - Pathology",
     "ILA 12 - Immunology & Pharmacology",
     "ILA 13 - Microbiology",
-    "ILA 14 - Endocrinology   - ILA 15 - Cardiology & Neurology",
+    "ILA 14 - Endocrinology",
+    "ILA 15 - Cardiology & Neurology",
     "ILA 16 - Renal & Urology"
   ]
 }
