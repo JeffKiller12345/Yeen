@@ -1,52 +1,52 @@
 - Pathology
 
-Describe the nature of disease.
+Describe the nature of disease
 
-Describe the process of acute inflammation.
+Describe the process of acute inflammation
 
-Describe the process of chronic inflammation.
+Describe the process of chronic inflammation
 
-Describe the process of atherosclerosis formation.
+Describe the process of atherosclerosis formation
 
-Describe the process of haemostasis.
+Describe the process of haemostasis
 
-Describe the processes of apoptosis and necrosis.
+Describe the processes of apoptosis and necrosis
 
-Describe the process of cell and tissue growth.
+Describe the process of cell and tissue growth
 
-Describe the process of carcinogenesis.
+Describe the process of carcinogenesis
 
-Describe the processes of how cancer spreads within the body.
+Describe the processes of how cancer spreads within the body
 
-Describe the process of tumour classification.
+Describe the process of tumour classification
 
-Describe the fundamental aspects of cancer treatments.
+Describe the fundamental aspects of cancer treatments
 
-Describe the processes of tissue healing and repair.
+Describe the processes of tissue healing and repair
 
-Describe the process of aging and the role of the autopsy in determining cause of death.
+Describe the process of aging and the role of the autopsy in determining cause of death
 
 - Immunology
 
-List and describe the function of the main cellular and humoral components of the immune system.
+List and describe the function of the main cellular and humoral components of the immune system
 
 Innate Immunity
 
 Adaptive immunity
 
-Describe hypersensitivity and explain the key features of an allergic response.
+Describe hypersensitivity and explain the key features of an allergic response
 
-Explain how immunity changes with ageing and the impact of this on our susceptibility to disease.
+Explain how immunity changes with ageing and the impact of this on our susceptibility to disease
 
-Describe the principles of immunotherapy in the management of cancer and inflammatory diseases.
+Describe the principles of immunotherapy in the management of cancer and inflammatory diseases
 
-Describe the principles of immunisation and give examples of the different vaccines available and their benefits and drawbacks.
+Describe the principles of immunisation and give examples of the different vaccines available and their benefits and drawbacks
 
 Describe how immunological processes develop and become manifest and the consequences for the major organ systems detailed in Phase 2a
 
 - Microbiology
 
-Describe the biology and classification of micro-organisms.
+Describe the biology and classification of micro-organisms
 
 Gram-positive pathogens
 
@@ -94,24 +94,24 @@ Haematology emergencies
 
 - Public Health and Population Health Science
 
-Apply theoretical frameworks of sociology to explain the varied responses of individuals, groups and societies to disease.
+Apply theoretical frameworks of sociology to explain the varied responses of individuals, groups and societies to disease
 
 Explain sociological factors that contribute to illness, the course of the disease and the success of treatment − including issues relating to health inequalities, the links between occupation and health and the effects of poverty and affluence
 
-Explain and apply the basic principles of communicable disease control in hospital and community settings. (Cross Ref to Microbiology)
+Explain and apply the basic principles of communicable disease control in hospital and community settings (Cross Ref to Microbiology)
 
-Evaluate and apply epidemiological data in managing healthcare for the individual and the community.
+Evaluate and apply epidemiological data in managing healthcare for the individual and the community
 
-Critically appraise the results of relevant diagnostic, prognostic and treatment trials and other qualitative and quantitative studies as reported in the medical and scientific literature.
+Critically appraise the results of relevant diagnostic, prognostic and treatment trials and other qualitative and quantitative studies as reported in the medical and scientific literature
 
-Identify appropriate strategies for managing patients with dependence issues and other demonstrations of self-harm.
+Identify appropriate strategies for managing patients with dependence issues and other demonstrations of self-harm
 
-Discuss psychological aspects of behavioural change and treatment compliance.
+Discuss psychological aspects of behavioural change and treatment compliance
 
-Apply scientific method and approaches to medical research.
+Apply scientific method and approaches to medical research
 
 Evaluate and apply epidemiological data in managing healthcare for the individual 
-and the community. 
+and the community 
 
 - Respiratory Medicine
 
@@ -185,7 +185,7 @@ Non-functioning tumours and pituitary hormone testing
 
 Acromegaly and Prolactin
 
-Pituitary Hormones – (Part 2; Posterior) - Water Balance, Hyponatraemia, Vasopressin Deficiency and Resistance (Diabetes Insipidus).
+Pituitary Hormones – (Part 2; Posterior) - Water Balance, Hyponatraemia, Vasopressin Deficiency and Resistance (Diabetes Insipidus)
 
 Circadian Rhythms, Adrenal Insufficiency and Cortisol Excess (Cushingʼs syndrome)
 
@@ -213,7 +213,7 @@ Acute coronary syndrome
 
 ECG Parts 1 and 2
 
-Inherited cardiac conditions.
+Inherited cardiac conditions
 
 Cardiovascular Pharmacology Parts 1 and 2
 
@@ -241,7 +241,7 @@ CNS Infections
 
 Parkinsonʼs disease and its differential diagnosis
 
-Neurosurgery: An Introductory Lecture.
+Neurosurgery: An Introductory Lecture
 
 Brain tumours
 
@@ -267,7 +267,7 @@ Motor Neurone Disease
 
 Traumatic brain injury
 
-Hyperkinetic Movement Disorders.
+Hyperkinetic Movement Disorders
 
 Sensory symptoms
 
