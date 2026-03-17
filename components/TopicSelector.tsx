@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { TOPICS_ORDER, TOPIC_ORDER } from '@/data/topicsOrder'
 
 interface Selection {
   [topic: string]: {
@@ -17,26 +18,43 @@ export default function TopicSelector({ onChange }: Props) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [selections, setSelections] = useState<Selection>({})
 
-  // Fetch topics from Supabase
-  useEffect(() => {
-    supabase
-      .from('questions')
-      .select('topic, subtopic')
-      .then(({ data }) => {
-        const index: Record<string, string[]> = {}
-        for (const q of data ?? []) {
-          if (!index[q.topic]) index[q.topic] = []
-          if (!index[q.topic].includes(q.subtopic)) {
-            index[q.topic].push(q.subtopic)
-          }
+useEffect(() => {
+  supabase
+    .from('questions')
+    .select('topic, subtopic')
+    .then(({ data }) => {
+      // First build the index from Supabase
+      const index: Record<string, string[]> = {}
+      for (const q of data ?? []) {
+        if (!index[q.topic]) index[q.topic] = []
+        if (!index[q.topic].includes(q.subtopic)) {
+          index[q.topic].push(q.subtopic)
         }
-        const sorted: Record<string, string[]> = {}
-        for (const topic of Object.keys(index).sort()) {
-          sorted[topic] = index[topic].sort()
-        }
-        setTopics(sorted)
-      })
-  }, [])
+      }
+
+      // Then sort using your predefined order
+      const sorted: Record<string, string[]> = {}
+
+      // Topics in your defined order first, then any new ones alphabetically
+      const orderedTopics = [
+        ...TOPIC_ORDER.filter(t => index[t]),
+        ...Object.keys(index).filter(t => !TOPIC_ORDER.includes(t)).sort()
+      ]
+
+      for (const topic of orderedTopics) {
+        if (!index[topic]) continue
+        const predefinedOrder = TOPICS_ORDER[topic] ?? []
+        
+        // Subtopics in your defined order first, then any new ones alphabetically
+        sorted[topic] = [
+          ...predefinedOrder.filter(s => index[topic].includes(s)),
+          ...index[topic].filter(s => !predefinedOrder.includes(s)).sort()
+        ]
+      }
+
+      setTopics(sorted)
+    })
+}, [])
 
   useEffect(() => {
     onChange(selections)
