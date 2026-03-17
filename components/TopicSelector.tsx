@@ -1,9 +1,28 @@
 'use client'
 import { useState, useEffect } from 'react'
-import topicsIndex from '@/data/topicsIndex.json'
 
-type TopicsIndex = Record<string, string[]>
-const topics = topicsIndex as TopicsIndex
+const [topics, setTopics] = useState<Record<string, string[]>>({})
+
+useEffect(() => {
+  supabase
+    .from('questions')
+    .select('topic, subtopic')
+    .then(({ data }) => {
+      const index: Record<string, string[]> = {}
+      for (const q of data ?? []) {
+        if (!index[q.topic]) index[q.topic] = []
+        if (!index[q.topic].includes(q.subtopic)) {
+          index[q.topic].push(q.subtopic)
+        }
+      }
+      // Sort alphabetically
+      const sorted: Record<string, string[]> = {}
+      for (const topic of Object.keys(index).sort()) {
+        sorted[topic] = index[topic].sort()
+      }
+      setTopics(sorted)
+    })
+}, [])
 
 interface Selection {
   [topic: string]: {
