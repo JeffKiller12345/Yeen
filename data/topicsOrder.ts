@@ -35,8 +35,7 @@ export const TOPICS_ORDER: Record<string, string[]> = {
   ],
   "Immunology": [
     "List and describe the function of the main cellular and humoral components of the immune system",
-    "Innate Immunity",
-    "Adaptive immunity",
+    "Explain the main features of innate and adaptive immunity, the key differences between them, and how they work together to create our immune system",
     "Describe hypersensitivity and explain the key features of an allergic response",
     "Explain how immunity changes with ageing and the impact of this on our susceptibility to disease",
     "Describe the principles of immunotherapy in the management of cancer and inflammatory diseases",
@@ -80,7 +79,7 @@ export const TOPICS_ORDER: Record<string, string[]> = {
   "Public Health and Population Health Science": [
     "Apply theoretical frameworks of sociology to explain the varied responses of individuals, groups and societies to disease",
     "Explain sociological factors that contribute to illness, the course of the disease and the success of treatment − including issues relating to health inequalities, the links between occupation and health and the effects of poverty and affluence",
-    "Explain and apply the basic principles of communicable disease control in hospital and community settings (Cross Ref to Microbiology)",
+    "Explain and apply the basic principles of communicable disease control in hospital and community settings",
     "Evaluate and apply epidemiological data in managing healthcare for the individual and the community",
     "Critically appraise the results of relevant diagnostic, prognostic and treatment trials and other qualitative and quantitative studies as reported in the medical and scientific literature",
     "Identify appropriate strategies for managing patients with dependence issues and other demonstrations of self-harm",
