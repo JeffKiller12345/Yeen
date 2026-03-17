@@ -18,26 +18,21 @@ useEffect(() => {
   supabase
     .from('questions')
     .select('*')
+    .range(0, 5000)  // set higher than your total question count
     .then(({ data, error }) => {
       if (error) {
         console.error('Supabase error:', error)
       } else {
         console.log('Questions loaded:', data?.length)
-        console.log('First question:', data?.[0])
-        setQuestions(data ?? [])
+        const parsed = (data ?? []).map(q => ({
+          ...q,
+          options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options
+        }))
+        setQuestions(parsed)
       }
     })
 }, [])
 
-useEffect(() => {
-  supabase
-    .from('questions')
-    .select('*')
-    .then(({ data, error }) => {
-      if (error) console.error(error)
-      else setQuestions(data ?? [])
-    })
-}, [])
   const router = useRouter()
   const init = useQuizSession((s: QuizSession) => s.init)
 
