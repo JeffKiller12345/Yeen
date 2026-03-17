@@ -14,6 +14,7 @@ import type { Question, QuizSession, StudyFeedbackMode, SeenMode } from '@/types
 export default function Dashboard() {
 const [questions, setQuestions] = useState<Question[]>([])
 
+
 useEffect(() => {
   async function fetchAllQuestions() {
     const batchSize = 1000
@@ -61,6 +62,7 @@ useEffect(() => {
   const [feedbackMode, setFeedbackMode] = useState<StudyFeedbackMode>('immediate')
   const [seenMode, setSeenMode]         = useState<SeenMode>('all')
   const [error, setError]               = useState('')
+  const [topics, setTopics] = useState<Record<string, string[]>>({})
 
   const totalSelected = Object.values(selections)
     .flatMap(s => Object.values(s))
@@ -82,10 +84,16 @@ useEffect(() => {
   }
 
   const startMock = () => {
-    setError('')
-    const q = buildMockPaper(questions as any, topicsIndex)
-    init(q, examMode ? 'exam' : 'study', feedbackMode)
-    router.push('/quiz')
+    if (questions.length === 0) {
+    setError('Questions are still loading, please wait.')
+    return
+  }
+  console.log('Total questions available for mock:', questions.length)
+  const q = buildMockPaper(questions as any, topics)
+  console.log('Mock paper size:', q.length)
+  init(q, examMode ? 'exam' : 'study', feedbackMode)
+  router.push('/quiz')
+
   }
 
   const handleExport = async () => {
@@ -133,7 +141,7 @@ useEffect(() => {
         />
 
         {/* Topic selection */}
-        <TopicSelector onChange={setSelections} />
+        <TopicSelector onChange={setSelections} onTopicsLoaded={setTopics} />
 
         {/* Error */}
         {error && (

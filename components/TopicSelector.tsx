@@ -11,9 +11,10 @@ interface Selection {
 
 interface Props {
   onChange: (selections: Selection) => void
+  onTopicsLoaded: (topics: Record<string, string[]>) => void
 }
 
-export default function TopicSelector({ onChange }: Props) {
+export default function TopicSelector({ onChange, onTopicsLoaded }: Props) {
   const [topics, setTopics] = useState<Record<string, string[]>>({})
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [selections, setSelections] = useState<Selection>({})
@@ -57,6 +58,7 @@ useEffect(() => {
       }
 
       setTopics(sorted)
+      onTopicsLoaded(sorted)
     })
 }, [])
 
