@@ -1,28 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-
-const [topics, setTopics] = useState<Record<string, string[]>>({})
-
-useEffect(() => {
-  supabase
-    .from('questions')
-    .select('topic, subtopic')
-    .then(({ data }) => {
-      const index: Record<string, string[]> = {}
-      for (const q of data ?? []) {
-        if (!index[q.topic]) index[q.topic] = []
-        if (!index[q.topic].includes(q.subtopic)) {
-          index[q.topic].push(q.subtopic)
-        }
-      }
-      // Sort alphabetically
-      const sorted: Record<string, string[]> = {}
-      for (const topic of Object.keys(index).sort()) {
-        sorted[topic] = index[topic].sort()
-      }
-      setTopics(sorted)
-    })
-}, [])
+import { supabase } from '@/lib/supabase'
 
 interface Selection {
   [topic: string]: {
@@ -35,14 +13,35 @@ interface Props {
 }
 
 export default function TopicSelector({ onChange }: Props) {
+  const [topics, setTopics] = useState<Record<string, string[]>>({})
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [selections, setSelections] = useState<Selection>({})
+
+  // Fetch topics from Supabase
+  useEffect(() => {
+    supabase
+      .from('questions')
+      .select('topic, subtopic')
+      .then(({ data }) => {
+        const index: Record<string, string[]> = {}
+        for (const q of data ?? []) {
+          if (!index[q.topic]) index[q.topic] = []
+          if (!index[q.topic].includes(q.subtopic)) {
+            index[q.topic].push(q.subtopic)
+          }
+        }
+        const sorted: Record<string, string[]> = {}
+        for (const topic of Object.keys(index).sort()) {
+          sorted[topic] = index[topic].sort()
+        }
+        setTopics(sorted)
+      })
+  }, [])
 
   useEffect(() => {
     onChange(selections)
   }, [selections])
 
-  // Distribute N questions randomly across subtopics
   const distributeAcrossSubtopics = (topic: string, total: number): Record<string, number> => {
     const subs = topics[topic]
     const result: Record<string, number> = {}
@@ -70,22 +69,17 @@ export default function TopicSelector({ onChange }: Props) {
 
   const setCount = (topic: string, subtopic: string, count: number) => {
     const value = Math.max(0, isNaN(count) ? 0 : count)
-    setSelections(prev => {
-      const next: Selection = {
-        ...prev,
-        [topic]: { ...prev[topic], [subtopic]: value }
-      }
-      return next
-    })
+    setSelections(prev => ({
+      ...prev,
+      [topic]: { ...prev[topic], [subtopic]: value }
+    }))
   }
 
-  // Set all subtopics in a topic at once from the topic-level input
   const setTopicTotal = (topic: string, total: number) => {
     const value = Math.max(0, isNaN(total) ? 0 : total)
     setSelections(prev => {
       const next = { ...prev }
       if (value === 0) {
-        // Zero out all subtopics
         next[topic] = {}
         topics[topic].forEach(sub => { next[topic][sub] = 0 })
       } else {
@@ -111,28 +105,21 @@ export default function TopicSelector({ onChange }: Props) {
         <span className="count-badge">{totalSelected} questions</span>
       </div>
 
+      {Object.keys(topics).length === 0 && (
+        <div style={{ padding: '16px', textAlign: 'center', fontFamily: 'var(--font-pixel)', fontSize: '8px', color: '#aaa' }}>
+          LOADING TOPICS...
+        </div>
+      )}
+
       {Object.keys(topics).map((topic: string) => (
         <div key={topic} className="topic-group">
-
-          {/* Topic row */}
           <div className={`topic-row ${selections[topic] ? 'active' : ''}`}>
-            {/* Expand/collapse toggle */}
-            <span
-              className="toggle-icon"
-              onClick={() => toggleTopic(topic)}
-            >
+            <span className="toggle-icon" onClick={() => toggleTopic(topic)}>
               {expanded[topic] ? '▼' : '▶'}
             </span>
-
-            {/* Topic name — clicking selects the whole topic */}
-            <span
-              className="topic-name"
-              onClick={() => toggleTopic(topic)}
-            >
+            <span className="topic-name" onClick={() => toggleTopic(topic)}>
               {topic}
             </span>
-
-            {/* Topic-level question count input */}
             {selections[topic] && (
               <div className="topic-count-control" onClick={e => e.stopPropagation()}>
                 <span className="pixel-label" style={{ fontSize: '7px' }}>TOTAL:</span>
@@ -142,13 +129,11 @@ export default function TopicSelector({ onChange }: Props) {
                   className="count-input"
                   value={getTopicTotal(topic)}
                   onChange={e => setTopicTotal(topic, parseInt(e.target.value))}
-                  title="Set total questions — distributed evenly across subtopics"
                 />
               </div>
             )}
           </div>
 
-          {/* Subtopic rows */}
           {expanded[topic] && selections[topic] && (
             <div className="subtopic-list">
               {topics[topic].map((subtopic: string) => (
@@ -181,7 +166,6 @@ export default function TopicSelector({ onChange }: Props) {
           gap: 0;
           margin: 16px 0;
         }
-
         .selector-header {
           display: flex;
           align-items: center;
@@ -191,18 +175,15 @@ export default function TopicSelector({ onChange }: Props) {
           border: 2px solid var(--pink-dark);
           margin-bottom: 2px;
         }
-
         .count-badge {
           font-family: var(--font-pixel);
           font-size: 7px;
           color: white;
         }
-
         .topic-group {
           border: 2px solid var(--border-px);
           border-top: none;
         }
-
         .topic-row {
           display: flex;
           align-items: center;
@@ -212,14 +193,11 @@ export default function TopicSelector({ onChange }: Props) {
           transition: background 0.1s;
           user-select: none;
         }
-
         .topic-row:hover { background: var(--pink-light); }
-
         .topic-row.active {
           background: var(--green-pale);
           border-left: 4px solid var(--green-mid);
         }
-
         .toggle-icon {
           font-size: 8px;
           color: var(--pink-mid);
@@ -228,7 +206,6 @@ export default function TopicSelector({ onChange }: Props) {
           cursor: pointer;
           flex-shrink: 0;
         }
-
         .topic-name {
           font-family: var(--font-body);
           font-weight: 700;
@@ -236,18 +213,15 @@ export default function TopicSelector({ onChange }: Props) {
           flex: 1;
           cursor: pointer;
         }
-
         .topic-count-control {
           display: flex;
           align-items: center;
           gap: 6px;
         }
-
         .subtopic-list {
           background: white;
           border-top: 1.5px dashed var(--border-px);
         }
-
         .subtopic-row {
           display: flex;
           align-items: center;
@@ -255,22 +229,18 @@ export default function TopicSelector({ onChange }: Props) {
           border-bottom: 1px solid var(--border-px);
           gap: 12px;
         }
-
         .subtopic-row:last-child { border-bottom: none; }
-
         .subtopic-name {
           flex: 1;
           font-family: var(--font-body);
           font-size: 13px;
           color: #555;
         }
-
         .count-control {
           display: flex;
           align-items: center;
           border: 2px solid var(--pink-mid);
         }
-
         .count-control button {
           font-family: var(--font-pixel);
           font-size: 12px;
@@ -283,10 +253,7 @@ export default function TopicSelector({ onChange }: Props) {
           transition: background 0.1s;
           flex-shrink: 0;
         }
-
         .count-control button:hover { background: var(--pink-mid); color: white; }
-
-        /* Shared number input style */
         .count-input {
           font-family: var(--font-pixel);
           font-size: 9px;
@@ -300,14 +267,11 @@ export default function TopicSelector({ onChange }: Props) {
           background: white;
           -moz-appearance: textfield;
         }
-
-        /* Hide number input arrows */
         .count-input::-webkit-outer-spin-button,
         .count-input::-webkit-inner-spin-button {
           -webkit-appearance: none;
           margin: 0;
         }
-
         .count-input:focus {
           outline: none;
           background: var(--pink-light);
