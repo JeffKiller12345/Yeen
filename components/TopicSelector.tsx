@@ -23,6 +23,10 @@ useEffect(() => {
     .from('questions')
     .select('topic, subtopic')
     .then(({ data }) => {
+      const menHealth = data?.filter(q => 
+        q.subtopic.toLowerCase().includes('men')
+      )
+      console.log('Men related:', menHealth)
       // First build the index from Supabase
       const index: Record<string, string[]> = {}
       for (const q of data ?? []) {
