@@ -15,22 +15,42 @@ export default function Dashboard() {
 const [questions, setQuestions] = useState<Question[]>([])
 
 useEffect(() => {
-  supabase
-    .from('questions')
-    .select('*')
-    .range(0, 5000)  // set higher than your total question count
-    .then(({ data, error }) => {
+  async function fetchAllQuestions() {
+    const batchSize = 1000
+    let page = 0
+    let allQuestions: Question[] = []
+    let keepFetching = true
+
+    while (keepFetching) {
+      const { data, error } = await supabase
+        .from('questions')
+        .select('*')
+        .range(page * batchSize, (page + 1) * batchSize - 1)
+
       if (error) {
         console.error('Supabase error:', error)
-      } else {
-        console.log('Questions loaded:', data?.length)
-        const parsed = (data ?? []).map(q => ({
-          ...q,
-          options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options
-        }))
-        setQuestions(parsed)
+        break
       }
-    })
+
+      const parsed = (data ?? []).map(q => ({
+        ...q,
+        options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options
+      }))
+
+      allQuestions = [...allQuestions, ...parsed]
+
+      if (!data || data.length < batchSize) {
+        keepFetching = false
+      } else {
+        page++
+      }
+    }
+
+    console.log('Questions loaded:', allQuestions.length)
+    setQuestions(allQuestions)
+  }
+
+  fetchAllQuestions()
 }, [])
 
   const router = useRouter()
