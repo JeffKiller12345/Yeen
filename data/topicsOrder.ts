@@ -127,7 +127,7 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Non-functioning tumours and pituitary hormone testing",
     "Acromegaly and Prolactin",
     "Pituitary Hormones – (Part 2; Posterior) - Water Balance, Hyponatraemia, Vasopressin Deficiency and Resistance (Diabetes Insipidus)",
-    "Circadian Rhythms, Adrenal Insufficiency and Cortisol Excess (Cushingʼs syndrome)",
+    "Circadian Rhythms, Adrenal Insufficiency and Cortisol Excess (Cushings syndrome)",
     "Endocrine Hypertension",
     "Parathyroid and Disorders of Calcium Metabolism",
     "Puberty",
