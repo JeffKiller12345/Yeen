@@ -9,7 +9,7 @@ const schema = z.object({
     topic: z.string(),
     subtopic: z.string(),
     question: z.string(),
-    options: z.record(z.string()),
+    options: z.record(z.string(), z.string()),
     correct_answer: z.enum(['A', 'B', 'C', 'D', 'E']),
     feedback: z.string(),
     generated_at: z.string().optional(),
