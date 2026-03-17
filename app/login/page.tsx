@@ -2,11 +2,11 @@
 import { signIn } from 'next-auth/react'
 
 const MARQUEE_IMAGES = [
-  '/images/aman1.png',
+  '/images/aman1.PNG',
   '/images/aman2.jpeg',
-  '/images/aman3.jpg',
-  '/images/aman4.jpg',
-  '/images/aman5.jpg',
+  '/images/aman3.JPG',
+  '/images/aman4.JPG',
+  '/images/aman5.JPG',
 ]
 
 function Marquee({ reverse = false }) {
@@ -67,7 +67,7 @@ export default function LoginPage() {
       <Marquee />
 
       <div className="login-card kawaii-panel">
-        <p style={{ fontSize: '40px', margin: '0 0 8px' }}>✿</p>
+        <p style={{ fontSize: '40px', margin: '0 0 8px' }}></p>
         <p className="pixel-label" style={{ marginBottom: '8px' }}>YEEN</p>
         <p style={{
           fontFamily: 'var(--font-body)',
