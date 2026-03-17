@@ -7,11 +7,22 @@ import ModeSelector from '@/components/ModeSelector'
 import { selectQuestions } from '@/lib/questionUtils'
 import { buildMockPaper } from '@/lib/mockPaper'
 import { useQuizSession } from '@/lib/quizSession'
-import questions from '@/data/questions.json'
 import topicsIndex from '@/data/topicsIndex.json'
-import type { QuizSession, StudyFeedbackMode, SeenMode } from '@/types'
+import { supabase } from '@/lib/supabase'
+import type { Question, QuizSession, StudyFeedbackMode, SeenMode } from '@/types'
 
 export default function Dashboard() {
+const [questions, setQuestions] = useState<Question[]>([])
+
+useEffect(() => {
+  supabase
+    .from('questions')
+    .select('*')
+    .then(({ data, error }) => {
+      if (error) console.error(error)
+      else setQuestions(data ?? [])
+    })
+}, [])
   const router = useRouter()
   const init = useQuizSession((s: QuizSession) => s.init)
 

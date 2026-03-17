@@ -1,16 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jsPDF } from 'jspdf'
 import type { Question } from '@/types'
+import { z } from 'zod'
+
+const schema = z.object({
+  questions: z.array(z.object({
+    id: z.string(),
+    topic: z.string(),
+    subtopic: z.string(),
+    question: z.string(),
+    options: z.record(z.string()),
+    correct_answer: z.enum(['A', 'B', 'C', 'D', 'E']),
+    feedback: z.string(),
+    generated_at: z.string().optional(),
+  })).min(1).max(200)
+})
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { questions }: { questions: Question[] } = body
+    const parsed = schema.safeParse(body)
 
-    if (!Array.isArray(questions) || questions.length === 0) {
-      return NextResponse.json({ error: 'No questions provided' }, { status: 400 })
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
     }
 
+    const { questions } = parsed.data
+  
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
     const pageW = 210
     const margin = 20
