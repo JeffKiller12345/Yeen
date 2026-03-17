@@ -19,6 +19,21 @@ useEffect(() => {
     .from('questions')
     .select('*')
     .then(({ data, error }) => {
+      if (error) {
+        console.error('Supabase error:', error)
+      } else {
+        console.log('Questions loaded:', data?.length)
+        console.log('First question:', data?.[0])
+        setQuestions(data ?? [])
+      }
+    })
+}, [])
+
+useEffect(() => {
+  supabase
+    .from('questions')
+    .select('*')
+    .then(({ data, error }) => {
       if (error) console.error(error)
       else setQuestions(data ?? [])
     })
