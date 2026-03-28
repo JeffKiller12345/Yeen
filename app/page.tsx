@@ -123,22 +123,6 @@ export default function Dashboard() {
     router.push('/quiz')
   }
 
-  const startMock = () => {
-    if (questions.length === 0) {
-      setError('Questions are still loading, please wait.')
-      return
-    }
-    console.log('Total questions available for mock:', questions.length)
-    // MockSelector is a plain function, cast to avoid React-component inference
-    const q = (MockSelector as unknown as (qs: Question[], topics: Record<string, string[]>) => Question[])(
-      questions as any,
-      topics
-    )
-    console.log('Mock paper size:', q.length)
-    init(q, examMode ? 'exam' : 'study', feedbackMode)
-    router.push('/quiz')
-  }
-
   const handleExport = async () => {
     if (totalSelected === 0) { setError('Select topics before exporting.'); return }
     const q = selectQuestions(questions as any, { selections, seenMode })
@@ -204,14 +188,12 @@ export default function Dashboard() {
             </button>
           </div>
           <div className="action-secondary">
-            <button className="btn-kawaii green" onClick={startMock}>
-              START MOCK EXAM
-            </button>
             <button className="btn-kawaii" onClick={handleExport}>
               ⬇ EXPORT PDF
             </button>
           </div>
-        </div>
+
+          <MockSelector />
 
         <div className="mock-info kawaii-panel">
           <p className="pixel-label" style={{ marginBottom: '8px' }}>
