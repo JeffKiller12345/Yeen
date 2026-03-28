@@ -1,6 +1,5 @@
 'use client'
-import { useState } from 'react'
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { fetchMocks, loadSBAMock, loadSAQMock } from '@/lib/mockLoader'
 import { useQuizSession } from '@/lib/quizSession'
 import { useRouter } from 'next/navigation'
@@ -81,18 +80,10 @@ export default function MockSelector() {
     }
   }
 
-  const formatTime = (seconds: number) => {
-    const h = Math.floor(seconds / 3600)
-    const m = Math.floor((seconds % 3600) / 60)
-    if (h > 0) return `${h}h ${m}m`
-    return `${m} mins`
-  }
-
   return (
     <div className="mock-selector kawaii-panel">
       <p className="pixel-label" style={{ marginBottom: '12px' }}>★ MOCK PAPERS</p>
 
-      {/* Filter tabs */}
       <div className="mock-filter">
         {(['all', 'sba', 'saq'] as const).map(f => (
           <button
@@ -132,27 +123,10 @@ export default function MockSelector() {
                 </span>
               </div>
 
-              <div className="mock-stats">
-                <div className="mock-stat">
-                  <span className="stat-value">{mock.total_questions}</span>
-                  <span className="stat-label">questions</span>
-                </div>
-                {mock.total_marks && (
-                  <div className="mock-stat">
-                    <span className="stat-value">{mock.total_marks}</span>
-                    <span className="stat-label">marks</span>
-                  </div>
-                )}
-                <div className="mock-stat">
-                  <span className="stat-value">{formatTime(mock.time_seconds)}</span>
-                  <span className="stat-label">allowed</span>
-                </div>
-              </div>
-
               <div className="mock-actions">
                 <button
                   className={`btn-kawaii ${mock.type === 'saq' ? 'green' : ''}`}
-                  style={{ flex: 1, fontSize: '7px', marginTop: '8px' }}
+                  style={{ flex: 1, fontSize: '7px' }}
                   onClick={() => launchMock(mock)}
                   disabled={launching === mock.id || exporting === mock.id}
                 >
@@ -161,7 +135,7 @@ export default function MockSelector() {
 
                 <button
                   className="btn-kawaii"
-                  style={{ fontSize: '7px', marginTop: '8px', padding: '10px' }}
+                  style={{ fontSize: '7px', padding: '10px' }}
                   onClick={() => exportMock(mock)}
                   disabled={launching === mock.id || exporting === mock.id}
                   title="Export as PDF"
@@ -256,38 +230,10 @@ export default function MockSelector() {
           line-height: 1.4;
         }
 
-        .mock-stats {
-          display: flex;
-          gap: 8px;
-          margin-bottom: 4px;
-        }
-
-        .mock-stat {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          flex: 1;
-          padding: 6px 4px;
-          background: var(--cream);
-          border: 1px solid var(--border-px);
-        }
-
-        .stat-value {
-          font-family: var(--font-pixel);
-          font-size: 10px;
-          color: var(--pink-dark);
-        }
-
-        .stat-label {
-          font-family: var(--font-body);
-          font-size: 10px;
-          color: #aaa;
-        }
-
         .mock-actions {
           display: flex;
           gap: 6px;
-          align-items: flex-end;
+          align-items: center;
         }
       `}</style>
     </div>
