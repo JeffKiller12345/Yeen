@@ -26,6 +26,24 @@ export default function QuizPage() {
   const isSAQ = questionType === 'saq'
   const allQuestions = isSAQ ? saqQuestions : questions
   const total = allQuestions.length
+
+
+  const getCaseId = (id: string) => id.replace(/_Q\d+$/, '')
+
+const saqCases: SAQQuestion[][] = isSAQ
+  ? Object.values(
+      saqQuestions.reduce((acc, q) => {
+        const caseId = getCaseId(q.id)
+        if (!acc[caseId]) acc[caseId] = []
+        acc[caseId].push(q)
+        return acc
+      }, {} as Record<string, SAQQuestion[]>)
+    ).map(qs => qs.sort((a, b) => a.id.localeCompare(b.id)))
+  : []
+
+const total = isSAQ ? saqCases.length : questions.length
+const currentCase = isSAQ ? saqCases[current] : null
+const q = isSAQ ? saqCases[current]?.[0] : questions[current]
   
   if (total === 0) return null
   
@@ -39,6 +57,10 @@ export default function QuizPage() {
   const isFlagged = flagged.has(q.id)
   const isExam = mode === 'exam'
   const isLast = current === total - 1
+
+  const chosen = isSAQ
+  ? (currentCase?.every(subQ => answers[subQ.id]) ? 'answered' : null)
+  : (answers[q?.id] ?? null)
 
   const handleNext = () => {
     if (isLast) handleFinish()
@@ -100,24 +122,50 @@ export default function QuizPage() {
           </div>
         </div>
 
-        {isSAQ ? (
-          <SAQCard
-            key={q.id}
-            question={saqQuestions[current]}
-            userAnswer={chosen ?? ''}
-            showFeedback={feedbackMode === 'immediate'}
-            onAnswer={val => answer(q.id, val)}
-            timeExpired={timerMode === 'total' && totalTimeSeconds === 0}
-          />
-        ) : (
-          <QuizCard
-            key={q.id}
-            question={questions[current]}
-            chosen={chosen as AnswerOption}
-            showFeedback={feedbackMode === 'immediate'}
-            onAnswer={val => answer(q.id, val)}
-          />
+        {isSAQ && currentCase ? (
+  <div className="saq-case">
+    {/* Shared case context once at the top */}
+    <div className="case-context kawaii-panel">
+      <span className="pixel-label" style={{ fontSize: '7px', marginBottom: '8px', display: 'block' }}>
+        ★ CLINICAL SCENARIO
+      </span>
+      <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', lineHeight: 1.6, margin: 0 }}>
+        {currentCase[0].case_context}
+      </p>
+    </div>
+
+    {/* Sub-questions in order */}
+    {currentCase.map((subQ, i) => (
+      <div key={subQ.id}>
+        {subQ.additional_context && (
+          <div className="additional-context">
+            <span className="pixel-label" style={{ fontSize: '7px' }}>✦ ADDITIONAL INFO</span>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', margin: '4px 0 0' }}>
+              {subQ.additional_context}
+            </p>
+          </div>
         )}
+        <SAQCard
+          key={subQ.id}
+          question={subQ}
+          userAnswer={answers[subQ.id] ?? ''}
+          showFeedback={feedbackMode === 'immediate'}
+          onAnswer={val => answer(subQ.id, val)}
+          timeExpired={timerMode === 'total' && totalTimeSeconds === 0}
+          hideContext
+        />
+      </div>
+    ))}
+  </div>
+) : !isSAQ ? (
+  <QuizCard
+    key={q.id}
+    question={questions[current]}
+    chosen={chosen as AnswerOption}
+    showFeedback={feedbackMode === 'immediate'}
+    onAnswer={val => answer(q.id, val)}
+  />
+) : null}
 
         <div className="quiz-nav">
           <button className="btn-kawaii" onClick={prev} disabled={current === 0}>
@@ -141,6 +189,8 @@ export default function QuizPage() {
         .quiz-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
         .quiz-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 16px; border-top: 2px dashed var(--pink-mid); }
         .question-counter { font-size: 8px; color: #aaa; }
+        .saq-case { display: flex; flex-direction: column; gap: 12px; }
+        .additional-context { padding: 8px 12px; background: #fff8e1; border: 2px solid #ffe082; }
         .btn-kawaii:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; transform: none; }
       `}</style>
     </KawaiiLayout>
