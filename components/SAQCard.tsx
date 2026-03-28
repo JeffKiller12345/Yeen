@@ -8,6 +8,7 @@ interface Props {
   showFeedback: boolean
   onAnswer: (answer: string) => void
   timeExpired?: boolean
+  hideContext?: boolean
 }
 
 function normalise(str: string): string {
@@ -51,7 +52,7 @@ export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, 
   return (
     <div className="saq-card">
       {/* 1. Clinical Context (Scenario) */}
-      {question.case_context && (
+      {question.case_context && !hideContext && (
         <div className="case-context kawaii-panel">
           <span className="pixel-label" style={{ fontSize: '7px', marginBottom: '8px', display: 'block' }}>
             CLINICAL SCENARIO
