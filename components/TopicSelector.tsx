@@ -111,93 +111,95 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
 
   const getTopicTotal = (topic: string): number => {
     if (!selections[topic]) return 0
-    return Object.values(selections[topic]).reduce((a, b) => a + b, 0)
+    return Object.values(selections[topic]).reduce((a, b) => a + (b || 0), 0)
   }
 
   const totalSelected = Object.values(selections)
     .flatMap(s => Object.values(s))
-    .reduce((a, b) => a + b, 0)
+    .reduce((a, b) => a + (b || 0), 0)
 
   return (
-    <div className="topic-selector-container">
+    <div className="topic-selector">
       <div className="selector-header">
-        <span className="pixel-label">
-          {questionType.toUpperCase()} TOPICS 
-          <span className="total-badge">{totalSelected} selected</span>
-        </span>
+        <span className="pixel-label">SELECT TOPICS ♡</span>
+        <span className="count-badge">{totalSelected} questions</span>
       </div>
 
-      <div className="topics-grid">
-        {Object.entries(topics).map(([topic, subtopics]) => (
-          <div key={topic} className={`topic-group ${expanded[topic] ? 'is-expanded' : ''}`}>
-            <div className="topic-row">
-              <button className="expand-btn" onClick={() => setExpanded(e => ({...e, [topic]: !e[topic]}))}>
-                {expanded[topic] ? '▼' : '▶'}
-              </button>
-              
-              <label className="topic-main-label">
-                <input 
-                  type="checkbox" 
-                  checked={!!selections[topic]} 
-                  onChange={() => toggleTopic(topic)} 
-                />
-                <span className="topic-name">{topic}</span>
-              </label>
+      {Object.keys(topics).length === 0 && (
+        <div style={{ padding: '16px', textAlign: 'center', fontFamily: 'var(--font-pixel)', fontSize: '8px', color: '#aaa' }}>
+          LOADING TOPICS...
+        </div>
+      )}
 
-              <div className="topic-input-wrapper">
+      {Object.keys(topics).map((topic: string) => (
+        <div key={topic} className="topic-group">
+          <div className={`topic-row ${selections[topic] ? 'active' : ''}`}>
+            <span className="toggle-icon" onClick={() => toggleTopic(topic)}>
+              {expanded[topic] ? '▼' : '▶'}
+            </span>
+            <span className="topic-name" onClick={() => toggleTopic(topic)}>
+              {topic}
+            </span>
+            {selections[topic] && (
+              <div className="topic-count-control" onClick={e => e.stopPropagation()}>
+                <span className="pixel-label" style={{ fontSize: '7px' }}>TOTAL:</span>
                 <input
                   type="number"
-                  className="count-input main"
+                  min="0"
+                  className="count-input"
                   value={getTopicTotal(topic)}
-                  onChange={(e) => setTopicTotal(topic, parseInt(e.target.value))}
-                  placeholder="0"
+                  onChange={e => setTopicTotal(topic, parseInt(e.target.value) || 0)}
                 />
-              </div>
-            </div>
-
-            {expanded[topic] && (
-              <div className="subtopic-list">
-                {subtopics.map(sub => (
-                  <div key={sub} className="subtopic-row">
-                    <span className="subtopic-name">{sub}</span>
-                    <input
-                      type="number"
-                      className="count-input sub"
-                      value={selections[topic]?.[sub] || 0}
-                      onChange={(e) => setCount(topic, sub, parseInt(e.target.value))}
-                    />
-                  </div>
-                ))}
               </div>
             )}
           </div>
-        ))}
-      </div>
+
+          {expanded[topic] && selections[topic] && (
+            <div className="subtopic-list">
+              {topics[topic].map((subtopic: string) => (
+                <div key={subtopic} className="subtopic-row">
+                  <span className="subtopic-name">{subtopic}</span>
+                  <div className="count-control">
+                    <button onClick={() => setCount(topic, subtopic,
+                      (selections[topic]?.[subtopic] ?? 0) - 1)}>−</button>
+                    <input
+                      type="number"
+                      min="0"
+                      className="count-input"
+                      value={selections[topic]?.[subtopic] ?? 0}
+                      onChange={e => setCount(topic, subtopic, parseInt(e.target.value) || 0)}
+                    />
+                    <button onClick={() => setCount(topic, subtopic,
+                      (selections[topic]?.[subtopic] ?? 0) + 1)}>+</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
 
       <style jsx>{`
-        .topic-selector-container {
-          background: white;
-          border: 3px solid #ffc1e3; /* Pink Light */
-          padding: 15px;
-        }
-        .selector-header { margin-bottom: 15px; border-bottom: 2px dashed #ffc1e3; padding-bottom: 10px; }
-        .total-badge { margin-left: 10px; background: #ff4081; color: white; padding: 2px 6px; font-size: 10px; }
-        .topics-grid { display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto; }
-        .topic-group { border: 1px solid #eee; border-radius: 4px; }
-        .topic-row { display: flex; align-items: center; padding: 10px; gap: 10px; background: #fafafa; }
-        .expand-btn { background: none; border: none; cursor: pointer; font-size: 12px; width: 20px; }
-        .topic-main-label { flex: 1; display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .topic-name { font-weight: bold; font-size: 14px; }
-        .subtopic-list { padding: 10px 10px 10px 40px; background: white; border-top: 1px solid #eee; display: flex; flex-direction: column; gap: 5px; }
-        .subtopic-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #666; }
-        .count-input { 
-          width: 50px; 
-          border: 2px solid #ffc1e3; 
-          padding: 4px; 
-          font-family: 'Courier New', monospace; 
-          text-align: center;
-        }
-        .count-input.main { background: #fffde7; border-color: #fdd835; }
+        .topic-selector { display: flex; flex-direction: column; gap: 0; margin: 16px 0; }
+        .selector-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--pink-mid); border: 2px solid var(--pink-dark); margin-bottom: 2px; }
+        .count-badge { font-family: var(--font-pixel); font-size: 7px; color: white; }
+        .topic-group { border: 2px solid var(--border-px); border-top: none; }
+        .topic-row { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: var(--cream); transition: background 0.1s; user-select: none; }
+        .topic-row:hover { background: var(--pink-light); }
+        .topic-row.active { background: var(--green-pale); border-left: 4px solid var(--green-mid); }
+        .toggle-icon { font-size: 8px; color: var(--pink-mid); font-family: var(--font-pixel); width: 12px; cursor: pointer; flex-shrink: 0; }
+        .topic-name { font-family: var(--font-body); font-weight: 700; font-size: 14px; flex: 1; cursor: pointer; }
+        .topic-count-control { display: flex; align-items: center; gap: 6px; }
+        .subtopic-list { background: white; border-top: 1.5px dashed var(--border-px); }
+        .subtopic-row { display: flex; align-items: center; padding: 8px 14px 8px 32px; border-bottom: 1px solid var(--border-px); gap: 12px; }
+        .subtopic-row:last-child { border-bottom: none; }
+        .subtopic-name { flex: 1; font-family: var(--font-body); font-size: 13px; color: #555; }
+        .count-control { display: flex; align-items: center; border: 2px solid var(--pink-mid); }
+        .count-control button { font-family: var(--font-pixel); font-size: 12px; width: 28px; height: 28px; background: var(--pink-light); border: none; cursor: pointer; color: var(--pink-dark); transition: background 0.1s; flex-shrink: 0; }
+        .count-control button:hover { background: var(--pink-mid); color: white; }
+        .count-input { font-family: var(--font-pixel); font-size: 9px; width: 48px; height: 28px; text-align: center; border: none; border-left: 1.5px solid var(--pink-mid); border-right: 1.5px solid var(--pink-mid); color: var(--pink-dark); background: white; -moz-appearance: textfield; }
+        .count-input::-webkit-outer-spin-button, .count-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .count-input:focus { outline: none; background: var(--pink-light); }
       `}</style>
     </div>
   )
