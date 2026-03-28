@@ -42,7 +42,7 @@ async function fetchAll(table: string, columns: string): Promise<Question[]> {
     const { data, error } = await supabase.from(table).select(columns).range(from, from + step);
     if (error) throw error;
     if (!data || data.length === 0) break;
-    allData = [...allData, ...data as Question[]];
+    allData = [...allData, ...data as unknown as Question[]];
     if (data.length <= step) break;
     from += step + 1;
   }
