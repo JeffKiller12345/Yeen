@@ -35,11 +35,11 @@ export default function MockSelector() {
       if (mock.type === 'sba') {
         const questions = await loadSBAMock(mock)
         setLoadingProgress(`Loaded ${questions.length} questions`)
-        init(questions, 'exam', 'end', 'mcq', mock.time_seconds)
+        init(questions, 'exam', 'end', 'mcq')
       } else {
         const questions = await loadSAQMock(mock)
         setLoadingProgress(`Loaded ${questions.length} questions`)
-        initSAQ(questions, 'exam', 'end', mock.time_seconds)
+        initSAQ(questions, 'exam', 'end')
       }
       router.push('/quiz')
     } catch (err) {
