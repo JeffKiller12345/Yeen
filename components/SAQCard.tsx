@@ -28,18 +28,16 @@ export function checkAnswer(userAnswer: string, acceptable: string[]): boolean {
     if (normUser === normA) return true
     
     // 2. User provided a longer answer that contains the key term
-    // e.g., "The answer is insulin" vs "insulin"
     if (normUser.includes(normA) && normA.length > 3) return true
     
-    // 3. Simple pluralisation check (very basic)
+    // 3. Simple pluralisation check
     if (normUser === normA + 's' || normA === normUser + 's') return true
 
     return false
   })
 }
 
-export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, timeExpired }: Props) {
-  // Fix: Sync local state when the prop changes (e.g., clicking 'Prev' or 'Next')
+export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, timeExpired, hideContext }: Props) {
   const [localAnswer, setLocalAnswer] = useState(userAnswer)
 
   useEffect(() => {
@@ -125,7 +123,6 @@ export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, 
       )}
 
       <style jsx>{`
-        /* ... existing styles ... */
         .ans-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
         .ans-tag { 
           font-size: 11px; 
