@@ -107,40 +107,37 @@ export default function Dashboard() {
 
     const getCaseId = (id: string) => id.replace(/_Q\d+$/, '')
 
-    const startCustomSAQ = () => {
-  const result: SAQQuestion[] = []
-  
-  for (const [topic, subtopics] of Object.entries(selections)) {
-    // Sum all subtopic counts to get total cases wanted (legacy shape)
-    // OR if we pass flat { [topic]: number } after TopicSelector fix, 
-    // read it directly. Handle both shapes:
-    const count = typeof subtopics === 'number'
-      ? subtopics
-      : Object.values(subtopics as Record<string, number>).reduce((a, b) => a + b, 0)
+  const startCustomSAQ = () => {
+    const result: SAQQuestion[] = []
 
-    // Pool ALL questions for this topic regardless of subtopic
-    const pool = saqQuestions.filter(q => q.topic === topic)
+    for (const [topic, subtopics] of Object.entries(selections)) {
+      // Sum all values — in SAQ mode this is always { '': N }, so count = N
+      const count = Object.values(subtopics).reduce((a, b) => a + b, 0)
+      if (count === 0) continue
 
-    // Group into cases by the shared prefix (SAQ_XXXXXX)
-    const caseMap: Record<string, SAQQuestion[]> = {}
-    for (const q of pool) {
-      const caseId = getCaseId(q.id)
-      if (!caseMap[caseId]) caseMap[caseId] = []
-      caseMap[caseId].push(q)
+      // Pool ALL questions for this topic regardless of subtopic
+      const pool = saqQuestions.filter(q => q.topic === topic)
+
+      // Group into cases by shared prefix (SAQ_XXXXXX)
+      const caseMap: Record<string, SAQQuestion[]> = {}
+      for (const q of pool) {
+        const caseId = getCaseId(q.id)
+        if (!caseMap[caseId]) caseMap[caseId] = []
+        caseMap[caseId].push(q)
+      }
+
+      // Shuffle cases, pick N, add all sub-questions in order
+      const selectedCases = shuffle(Object.values(caseMap)).slice(0, count)
+      for (const caseQs of selectedCases) {
+        result.push(...caseQs.sort((a, b) => a.id.localeCompare(b.id)))
+      }
     }
 
-    // Shuffle cases, pick N, add all sub-questions in order
-    const selectedCases = shuffle(Object.values(caseMap)).slice(0, count)
-    for (const caseQs of selectedCases) {
-      result.push(...caseQs.sort((a, b) => a.id.localeCompare(b.id)))
-    }
+    if (result.length === 0) { setError('No SAQ questions match your selection.'); return }
+    initSAQ(result, examMode ? 'exam' : 'study', feedbackMode)
+    router.push('/quiz')
   }
-
-  if (result.length === 0) { setError('No SAQ questions match your selection.'); return }
-  initSAQ(result, examMode ? 'exam' : 'study', feedbackMode)
-  router.push('/quiz')
-}
-
+  
   const handleExport = async () => {
     if (totalSelected === 0) { setError('Select topics before exporting.'); return }
     const q = selectQuestions(questions as any, { selections, seenMode })
