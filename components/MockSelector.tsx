@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useEffect } from 'react'
 import { fetchMocks, loadSBAMock, loadSAQMock } from '@/lib/mockLoader'
 import { useQuizSession } from '@/lib/quizSession'
 import { useRouter } from 'next/navigation'
@@ -14,6 +15,8 @@ export default function MockSelector() {
   const [filter, setFilter] = useState<'all' | 'sba' | 'saq'>('all')
   const [loading, setLoading] = useState(true)
   const [launching, setLaunching] = useState<string | null>(null)
+  const [exporting, setExporting] = useState<string | null>(null)
+  const [loadingProgress, setLoadingProgress] = useState('')
 
   useEffect(() => {
     fetchMocks().then(m => {
@@ -25,8 +28,6 @@ export default function MockSelector() {
   const sbaMocks = mocks.filter(m => m.type === 'sba')
   const saqMocks = mocks.filter(m => m.type === 'saq')
   const displayed = filter === 'all' ? mocks : filter === 'sba' ? sbaMocks : saqMocks
-
-  const [loadingProgress, setLoadingProgress] = useState('')
 
   const launchMock = async (mock: Mock) => {
     setLaunching(mock.id)
@@ -45,6 +46,38 @@ export default function MockSelector() {
     } catch (err) {
       setLoadingProgress('Failed to load — please try again')
       setLaunching(null)
+    }
+  }
+
+  const exportMock = async (mock: Mock) => {
+    setExporting(mock.id)
+    try {
+      const questions = mock.type === 'sba'
+        ? await loadSBAMock(mock)
+        : await loadSAQMock(mock)
+
+      const response = await fetch('/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          questions,
+          questionType: mock.type === 'sba' ? 'mcq' : 'saq',
+        }),
+      })
+
+      if (!response.ok) throw new Error('Export failed')
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${mock.name.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Export error:', err)
+    } finally {
+      setExporting(null)
     }
   }
 
@@ -73,11 +106,13 @@ export default function MockSelector() {
           </button>
         ))}
       </div>
-{launching && (
-  <p className="pixel-label" style={{ fontSize: '7px', color: '#888', marginTop: '4px' }}>
-    {loadingProgress}
-  </p>
-)}
+
+      {launching && (
+        <p className="pixel-label" style={{ fontSize: '7px', color: '#888', marginTop: '4px' }}>
+          {loadingProgress}
+        </p>
+      )}
+
       {loading ? (
         <div className="mock-loading">
           <span className="pixel-label" style={{ fontSize: '7px', color: '#aaa' }}>
@@ -114,14 +149,26 @@ export default function MockSelector() {
                 </div>
               </div>
 
-              <button
-                className={`btn-kawaii ${mock.type === 'saq' ? 'green' : ''}`}
-                style={{ width: '100%', fontSize: '7px', marginTop: '8px' }}
-                onClick={() => launchMock(mock)}
-                disabled={launching === mock.id}
-              >
-                {launching === mock.id ? 'LOADING...' : '▶ START MOCK'}
-              </button>
+              <div className="mock-actions">
+                <button
+                  className={`btn-kawaii ${mock.type === 'saq' ? 'green' : ''}`}
+                  style={{ flex: 1, fontSize: '7px', marginTop: '8px' }}
+                  onClick={() => launchMock(mock)}
+                  disabled={launching === mock.id || exporting === mock.id}
+                >
+                  {launching === mock.id ? 'LOADING...' : '▶ START'}
+                </button>
+
+                <button
+                  className="btn-kawaii"
+                  style={{ fontSize: '7px', marginTop: '8px', padding: '10px' }}
+                  onClick={() => exportMock(mock)}
+                  disabled={launching === mock.id || exporting === mock.id}
+                  title="Export as PDF"
+                >
+                  {exporting === mock.id ? '...' : '⬇'}
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -235,6 +282,12 @@ export default function MockSelector() {
           font-family: var(--font-body);
           font-size: 10px;
           color: #aaa;
+        }
+
+        .mock-actions {
+          display: flex;
+          gap: 6px;
+          align-items: flex-end;
         }
       `}</style>
     </div>
