@@ -88,3 +88,14 @@ export interface SAQResult {
   awarded: boolean
   flagged: boolean
 }
+
+export interface Mock {
+  id: string;
+  name: string;
+  type: 'sba' | 'saq';
+  question_ids: string[];
+  total_questions: number;
+  time_seconds: number;
+  total_marks?: number; // Optional because SBAs don't usually use "marks" the same way
+  is_active: boolean;
+}
