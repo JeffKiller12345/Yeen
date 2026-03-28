@@ -129,7 +129,7 @@ export default function Dashboard() {
       // Shuffle cases, pick N, add all sub-questions in order
       const selectedCases = shuffle(Object.values(caseMap)).slice(0, count)
       for (const caseQs of selectedCases) {
-        result.push(...caseQs.sort((a, b) => a.id.localeCompare(b.id)))
+        result.push(...caseQs.sort((a: SAQQuestion, b: SAQQuestion) => a.id.localeCompare(b.id)))
       }
     }
 
