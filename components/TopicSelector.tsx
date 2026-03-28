@@ -12,7 +12,7 @@ interface Selection {
 interface Props {
   onChange: (selections: Selection) => void
   onTopicsLoaded: (topics: Record<string, string[]>) => void
-  questionType: 'mcq' | 'saq' 
+  questionType: 'mcq' | 'saq'
 }
 
 export default function TopicSelector({ onChange, onTopicsLoaded, questionType }: Props) {
@@ -23,13 +23,13 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
   useEffect(() => {
     const fetchTopics = async () => {
       const table = questionType === 'saq' ? 'saq_questions' : 'questions'
-      
+
       const { data, error } = await supabase
         .from(table)
         .select('topic, subtopic')
 
       if (error) {
-        console.error("Error fetching topics:", error)
+        console.error('Error fetching topics:', error)
         return
       }
 
@@ -57,7 +57,7 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
 
       setTopics(sorted)
       onTopicsLoaded(sorted)
-      setSelections({}) 
+      setSelections({})
     }
 
     fetchTopics()
@@ -66,6 +66,29 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
   useEffect(() => {
     onChange(selections)
   }, [selections, onChange])
+
+  // ── SAQ helpers ───────────────────────────────────────────────────────────
+  // Emits { [topic]: { '': N } } — empty string is a dummy subtopic key.
+  // startCustomSAQ sums all values per topic and ignores the key itself.
+
+  const setSAQCount = (topic: string, count: number) => {
+    const value = Math.max(0, isNaN(count) ? 0 : count)
+    setSelections(prev => {
+      if (value === 0) {
+        const next = { ...prev }
+        delete next[topic]
+        return next
+      }
+      return { ...prev, [topic]: { '': value } }
+    })
+  }
+
+  const getSAQCount = (topic: string): number => selections[topic]?.[''] ?? 0
+
+  const totalSAQCases = Object.values(selections)
+    .reduce((a, subtopics) => a + Object.values(subtopics).reduce((x, y) => x + y, 0), 0)
+
+  // ── MCQ helpers ───────────────────────────────────────────────────────────
 
   const distributeAcrossSubtopics = (topic: string, total: number): Record<string, number> => {
     const subs = topics[topic]
@@ -117,6 +140,69 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
   const totalSelected = Object.values(selections)
     .flatMap(s => Object.values(s))
     .reduce((a, b) => a + (b || 0), 0)
+
+  // ── SAQ render ────────────────────────────────────────────────────────────
+
+  if (questionType === 'saq') {
+    return (
+      <div className="topic-selector">
+        <div className="selector-header saq">
+          <span className="pixel-label">SELECT TOPICS ♡</span>
+          <span className="count-badge">
+            {totalSAQCases} {totalSAQCases === 1 ? 'case' : 'cases'}
+          </span>
+        </div>
+
+        {Object.keys(topics).length === 0 && (
+          <div style={{ padding: '16px', textAlign: 'center', fontFamily: 'var(--font-pixel)', fontSize: '8px', color: '#aaa' }}>
+            LOADING TOPICS...
+          </div>
+        )}
+
+        {Object.keys(topics).map(topic => {
+          const count = getSAQCount(topic)
+          return (
+            <div key={topic} className="topic-group">
+              <div className={`topic-row ${count > 0 ? 'active' : ''}`}>
+                <span className="topic-name">{topic}</span>
+                <div className="count-control" onClick={e => e.stopPropagation()}>
+                  <button onClick={() => setSAQCount(topic, count - 1)}>−</button>
+                  <input
+                    type="number"
+                    min="0"
+                    className="count-input"
+                    value={count}
+                    onChange={e => setSAQCount(topic, parseInt(e.target.value) || 0)}
+                  />
+                  <button onClick={() => setSAQCount(topic, count + 1)}>+</button>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+
+        <style jsx>{`
+          .topic-selector { display: flex; flex-direction: column; gap: 0; margin: 16px 0; }
+          .selector-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border: 2px solid var(--pink-dark); margin-bottom: 2px; }
+          .selector-header.saq { background: var(--green-mid); border-color: var(--green-mid); }
+          .count-badge { font-family: var(--font-pixel); font-size: 7px; color: white; }
+          .topic-group { border: 2px solid var(--border-px); border-top: none; }
+          .topic-row { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: var(--cream); transition: background 0.1s; user-select: none; }
+          .topic-row:hover { background: var(--green-pale); }
+          .topic-row.active { background: var(--green-pale); border-left: 4px solid var(--green-mid); }
+          .topic-name { font-family: var(--font-body); font-weight: 700; font-size: 14px; flex: 1; }
+          .count-control { display: flex; align-items: center; border: 2px solid var(--green-mid); }
+          .count-control button { font-family: var(--font-pixel); font-size: 12px; width: 28px; height: 28px; background: var(--green-pale); border: none; cursor: pointer; color: #2e7d32; transition: background 0.1s; flex-shrink: 0; }
+          .count-control button:hover { background: var(--green-mid); color: white; }
+          .count-input { font-family: var(--font-pixel); font-size: 9px; width: 48px; height: 28px; text-align: center; border: none; border-left: 1.5px solid var(--green-mid); border-right: 1.5px solid var(--green-mid); color: #2e7d32; background: white; -moz-appearance: textfield; }
+          .count-input::-webkit-outer-spin-button, .count-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+          .count-input:focus { outline: none; background: var(--green-pale); }
+        `}</style>
+      </div>
+    )
+  }
+
+  // ── MCQ render (unchanged) ────────────────────────────────────────────────
 
   return (
     <div className="topic-selector">
