@@ -47,9 +47,9 @@ export default function ResultsPage() {
 
     if (quizType === 'mcq') {
       // Remove 'mcq' and cast the questions to the correct type
-      init(flagged as any[], 'study', 'immediate', 0);
+      init(flagged as any[], 'study', 'immediate', 'mcq');
     } else {
-      initSAQ(flagged as SAQQuestion[], 'study', 'immediate', 0);
+      initSAQ(flagged as SAQQuestion[], 'study', 'immediate');
     }
   
     router.push('/quiz');
