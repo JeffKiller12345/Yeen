@@ -105,23 +105,30 @@ export default function Dashboard() {
     router.push('/quiz')
   }
 
-  // Single definition of startCustomSAQ — removed the duplicate
-  const startCustomSAQ = () => {
-    const result: SAQQuestion[] = []
-    for (const [topic, subtopics] of Object.entries(selections)) {
-      for (const [subtopic, count] of Object.entries(subtopics)) {
-        const pool = saqQuestions.filter(
-          q => q.topic === topic && q.subtopic === subtopic
-        )
-        result.push(...shuffle(pool).slice(0, count))
+    const getCaseId = (id: string) => id.replace(/_Q\d+$/, '')
+
+    const startCustomSAQ = () => {
+      const result: SAQQuestion[] = []
+      for (const [topic, subtopics] of Object.entries(selections)) {
+        for (const [subtopic, count] of Object.entries(subtopics)) {
+          const pool = saqQuestions.filter(
+            q => q.topic === topic && q.subtopic === subtopic
+          )
+      // Group pool into cases, select N cases, then add all their questions
+          const caseIds = [...new Set(pool.map(q => getCaseId(q.id)))]
+          const selectedCaseIds = shuffle(caseIds).slice(0, count)
+          selectedCaseIds.forEach(caseId => {
+            const caseQs = pool
+              .filter(q => getCaseId(q.id) === caseId)
+              .sort((a, b) => a.id.localeCompare(b.id)) // ensure Q1,Q2,Q3 order
+            result.push(...caseQs)
+          })
+        }
       }
+      if (result.length === 0) { setError('No SAQ questions match your selection.'); return }
+      initSAQ(result, examMode ? 'exam' : 'study', feedbackMode)
+      router.push('/quiz')
     }
-    if (result.length === 0) { setError('No SAQ questions match your selection.'); return }
-    const shuffled = shuffle(result)
-    // initSAQ only accepts 3 arguments per its type signature
-    initSAQ(shuffled, examMode ? 'exam' : 'study', feedbackMode)
-    router.push('/quiz')
-  }
 
   const handleExport = async () => {
     if (totalSelected === 0) { setError('Select topics before exporting.'); return }
