@@ -39,20 +39,20 @@ export default function ResultsPage() {
   if (!results) return null
 
   const handleReviewFlagged = () => {
-    const flaggedQuestions = (results as any[])
+    const flagged = (results as any[])
       .filter(r => r.flagged)
-      .map(r => r.question)
+      .map(r => r.question);
 
-    if (flaggedQuestions.length === 0) return
+    if (flagged.length === 0) return;
 
     if (quizType === 'mcq') {
-      init(flaggedQuestions, 'study', 'immediate', 'mcq', 0)
+      // Remove 'mcq' and cast the questions to the correct type
+      init(flagged as any[], 'study', 'immediate', 0);
     } else {
-      // Handle SAQ review initialization
-      initSAQ(flaggedQuestions as SAQQuestion[], 'study', 'immediate', 0)
+      initSAQ(flagged as SAQQuestion[], 'study', 'immediate', 0);
     }
-    
-    router.push('/quiz')
+  
+    router.push('/quiz');
   }
 
   return (
