@@ -20,19 +20,12 @@ function normalise(str: string): string {
 export function checkAnswer(userAnswer: string, acceptable: string[]): boolean {
   const normUser = normalise(userAnswer)
   if (!normUser) return false
-  
+
   return acceptable.some(a => {
     const normA = normalise(a)
-    
-    // 1. Exact match (High confidence)
     if (normUser === normA) return true
-    
-    // 2. User provided a longer answer that contains the key term
     if (normUser.includes(normA) && normA.length > 3) return true
-    
-    // 3. Simple pluralisation check
     if (normUser === normA + 's' || normA === normUser + 's') return true
-
     return false
   })
 }
@@ -49,29 +42,26 @@ export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, 
 
   return (
     <div className="saq-card">
-      {/* 1. Clinical Context (Scenario) */}
+
+      {/* 1. Clinical Context — only shown when not hidden by parent */}
       {question.case_context && !hideContext && (
-        <div className="case-context kawaii-panel">
-          <span className="pixel-label" style={{ fontSize: '7px', marginBottom: '8px', display: 'block' }}>
-            CLINICAL SCENARIO
-          </span>
+        <div className="scenario-box">
+          <span className="box-label">CLINICAL SCENARIO</span>
           <p className="context-text">{question.case_context}</p>
         </div>
       )}
 
       {/* 2. Question Stem */}
-      <div className="question-stem kawaii-panel">
-        <div className="marks-badge">
-          {question.marks} {question.marks === 1 ? 'mark' : 'marks'}
+      <div className="stem-box">
+        <div className="stem-header">
+          <span className="marks-pill">{question.marks} {question.marks === 1 ? 'mark' : 'marks'}</span>
         </div>
         <p className="stem-text">{question.question}</p>
       </div>
 
       {/* 3. Answer Section */}
-      <div className="answer-section">
-        <span className="pixel-label" style={{ fontSize: '7px', marginBottom: '8px', display: 'block' }}>
-          {hasSubmitted ? 'YOUR SUBMISSION' : 'TYPE YOUR ANSWER'}
-        </span>
+      <div className="answer-box">
+        <span className="box-label">{hasSubmitted ? 'YOUR SUBMISSION' : 'TYPE YOUR ANSWER'}</span>
         <textarea
           className={`answer-input ${hasSubmitted ? (isAwarded ? 'correct' : 'wrong') : ''}`}
           value={localAnswer}
@@ -80,7 +70,6 @@ export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, 
           placeholder="Type your answer here..."
           rows={3}
         />
-        
         {!hasSubmitted && !timeExpired && (
           <button
             className="btn-kawaii"
@@ -95,46 +84,200 @@ export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, 
 
       {/* 4. Feedback Section */}
       {hasSubmitted && (
-        <div className={`saq-feedback ${isAwarded ? 'correct' : 'wrong'}`}>
+        <div className={`feedback-box ${isAwarded ? 'correct' : 'wrong'}`}>
           <div className="feedback-header">
             <span className="pixel-label" style={{ fontSize: '7px' }}>
               {isAwarded ? '★ CORRECT' : '✗ REVIEW REQUIRED'}
             </span>
-            <span className="marks-label">
-              {isAwarded ? question.marks : 0} / {question.marks} Marks
+            <span className="marks-result">
+              {isAwarded ? question.marks : 0} / {question.marks} marks
             </span>
           </div>
 
           <div className="acceptable-answers">
             <p className="acceptable-label">Acceptable answers:</p>
             <div className="ans-grid">
-               {question.acceptable_answers.map((a, i) => (
-                 <span key={i} className="ans-tag">{a}</span>
-               ))}
+              {question.acceptable_answers.map((a, i) => (
+                <span key={i} className="ans-tag">{a}</span>
+              ))}
             </div>
           </div>
 
           {question.feedback && (
             <div className="feedback-explanation">
-               <p className="feedback-text">{question.feedback}</p>
+              <p className="feedback-text">{question.feedback}</p>
             </div>
           )}
         </div>
       )}
 
       <style jsx>{`
-        .ans-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-        .ans-tag { 
-          font-size: 11px; 
-          background: white; 
-          padding: 2px 8px; 
-          border: 1px solid #ccc; 
-          border-radius: 4px;
+        .saq-card {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
         }
+
+        /* Scenario box — keeps kawaii-panel look for the case context */
+        .scenario-box {
+          background: white;
+          border: 3px solid var(--pink-mid);
+          box-shadow: 4px 4px 0 var(--pink-mid);
+          padding: 14px 16px 16px;
+          position: relative;
+        }
+
+        /* Question stem — plain bordered box, no floating label */
+        .stem-box {
+          background: white;
+          border: 2px solid var(--border-px);
+          padding: 14px 16px;
+        }
+
+        .stem-header {
+          display: flex;
+          align-items: center;
+          margin-bottom: 10px;
+        }
+
+        .marks-pill {
+          font-family: var(--font-pixel);
+          font-size: 7px;
+          background: var(--pink-light);
+          border: 1.5px solid var(--pink-mid);
+          color: var(--pink-dark);
+          padding: 3px 8px;
+        }
+
+        .stem-text {
+          font-family: var(--font-body);
+          font-size: 14px;
+          line-height: 1.6;
+          color: #222;
+          margin: 0;
+        }
+
+        .context-text {
+          font-family: var(--font-body);
+          font-size: 13px;
+          line-height: 1.6;
+          color: #333;
+          margin: 6px 0 0;
+        }
+
+        /* Shared label style for box headers */
+        .box-label {
+          font-family: var(--font-pixel);
+          font-size: 7px;
+          color: var(--pink-dark);
+          letter-spacing: 0.1em;
+          display: block;
+          margin-bottom: 8px;
+        }
+
+        /* Answer box */
+        .answer-box {
+          background: white;
+          border: 2px solid var(--border-px);
+          padding: 14px 16px;
+        }
+
+        .answer-input {
+          width: 100%;
+          font-family: var(--font-body);
+          font-size: 13px;
+          padding: 10px;
+          border: 2px solid var(--border-px);
+          resize: vertical;
+          background: #fafafa;
+          color: #222;
+          box-sizing: border-box;
+          line-height: 1.5;
+        }
+
+        .answer-input:focus {
+          outline: none;
+          border-color: var(--pink-mid);
+          background: white;
+        }
+
+        .answer-input.correct {
+          border-color: #66bb6a;
+          background: #f1f8e9;
+        }
+
+        .answer-input.wrong {
+          border-color: #ef9a9a;
+          background: #fff5f5;
+        }
+
+        .answer-input:disabled {
+          opacity: 0.85;
+          cursor: default;
+        }
+
+        /* Feedback box */
+        .feedback-box {
+          border: 2px solid;
+          padding: 14px 16px;
+        }
+
+        .feedback-box.correct {
+          border-color: #66bb6a;
+          background: #f1f8e9;
+        }
+
+        .feedback-box.wrong {
+          border-color: #ef9a9a;
+          background: #fff5f5;
+        }
+
+        .feedback-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 12px;
+        }
+
+        .marks-result {
+          font-family: var(--font-pixel);
+          font-size: 8px;
+          color: #555;
+        }
+
+        .acceptable-label {
+          font-family: var(--font-pixel);
+          font-size: 7px;
+          color: #777;
+          margin: 0 0 8px;
+        }
+
+        .ans-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .ans-tag {
+          font-family: var(--font-body);
+          font-size: 12px;
+          background: white;
+          padding: 3px 10px;
+          border: 1.5px solid #ccc;
+        }
+
         .feedback-explanation {
           margin-top: 12px;
           padding-top: 12px;
-          border-top: 1px dashed rgba(0,0,0,0.1);
+          border-top: 1px dashed rgba(0,0,0,0.15);
+        }
+
+        .feedback-text {
+          font-family: var(--font-body);
+          font-size: 12px;
+          color: #555;
+          line-height: 1.6;
+          margin: 0;
         }
       `}</style>
     </div>
