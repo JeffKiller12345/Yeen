@@ -10,7 +10,7 @@ import FlagButton from '@/components/FlagButton'
 import Timer from '@/components/Timer'
 import KawaiiLayout from '@/components/KawaiiLayout'
 import TotalTimer from '@/components/TotalTimer'
-import type { AnswerOption, QuizResult, SAQResult, QuizSession } from '@/types'
+import type { AnswerOption, QuizResult, SAQResult, QuizSession, SAQQuestion } from '@/types'
 
 export default function QuizPage() {
   const router = useRouter()
@@ -24,43 +24,37 @@ export default function QuizPage() {
   const [timerKey, setTimerKey] = useState(0)
 
   const isSAQ = questionType === 'saq'
-  const allQuestions = isSAQ ? saqQuestions : questions
-  const total = allQuestions.length
-
 
   const getCaseId = (id: string) => id.replace(/_Q\d+$/, '')
 
-const saqCases: SAQQuestion[][] = isSAQ
-  ? Object.values(
-      saqQuestions.reduce((acc, q) => {
-        const caseId = getCaseId(q.id)
-        if (!acc[caseId]) acc[caseId] = []
-        acc[caseId].push(q)
-        return acc
-      }, {} as Record<string, SAQQuestion[]>)
-    ).map(qs => qs.sort((a, b) => a.id.localeCompare(b.id)))
-  : []
+  const saqCases: SAQQuestion[][] = isSAQ
+    ? Object.values(
+        saqQuestions.reduce((acc, q) => {
+          const caseId = getCaseId(q.id)
+          if (!acc[caseId]) acc[caseId] = []
+          acc[caseId].push(q)
+          return acc
+        }, {} as Record<string, SAQQuestion[]>)
+      ).map(qs => qs.sort((a, b) => a.id.localeCompare(b.id)))
+    : []
 
-const total = isSAQ ? saqCases.length : questions.length
-const currentCase = isSAQ ? saqCases[current] : null
-const q = isSAQ ? saqCases[current]?.[0] : questions[current]
-  
-  if (total === 0) return null
-  
-  useEffect(() => {
-    if (total === 0) router.replace('/')
-  }, [total])
+  const total = isSAQ ? saqCases.length : questions.length
+  const currentCase = isSAQ ? saqCases[current] : null
+  const q = isSAQ ? saqCases[current]?.[0] : questions[current]
 
-
-  const q = allQuestions[current]
-  const chosen = answers[q.id] ?? null
-  const isFlagged = flagged.has(q.id)
+  const isFlagged = q ? flagged.has(q.id) : false
   const isExam = mode === 'exam'
   const isLast = current === total - 1
 
   const chosen = isSAQ
-  ? (currentCase?.every(subQ => answers[subQ.id]) ? 'answered' : null)
-  : (answers[q?.id] ?? null)
+    ? (currentCase?.every(subQ => answers[subQ.id]) ? 'answered' : null)
+    : (answers[q?.id] ?? null)
+
+  if (total === 0) return null
+
+  useEffect(() => {
+    if (total === 0) router.replace('/')
+  }, [total])
 
   const handleNext = () => {
     if (isLast) handleFinish()
@@ -105,11 +99,11 @@ const q = isSAQ ? saqCases[current]?.[0] : questions[current]
         <div className="quiz-topbar">
           <ProgressBar current={current} total={total} flaggedCount={flagged.size} />
           <div className="quiz-controls">
-            <FlagButton flagged={isFlagged} onToggle={() => toggleFlag(q.id)} />
+            <FlagButton flagged={isFlagged} onToggle={() => q && toggleFlag(q.id)} />
             {isExam && timerMode === 'total' && (
               <TotalTimer
-                  totalSeconds={totalTimeSeconds}
-                  onExpire={handleFinish}
+                totalSeconds={totalTimeSeconds}
+                onExpire={handleFinish}
               />
             )}
             {isExam && timerMode === 'per_question' && (
@@ -123,49 +117,47 @@ const q = isSAQ ? saqCases[current]?.[0] : questions[current]
         </div>
 
         {isSAQ && currentCase ? (
-  <div className="saq-case">
-    {/* Shared case context once at the top */}
-    <div className="case-context kawaii-panel">
-      <span className="pixel-label" style={{ fontSize: '7px', marginBottom: '8px', display: 'block' }}>
-        ★ CLINICAL SCENARIO
-      </span>
-      <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', lineHeight: 1.6, margin: 0 }}>
-        {currentCase[0].case_context}
-      </p>
-    </div>
+          <div className="saq-case">
+            <div className="case-context kawaii-panel">
+              <span className="pixel-label" style={{ fontSize: '7px', marginBottom: '8px', display: 'block' }}>
+                ★ CLINICAL SCENARIO
+              </span>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', lineHeight: 1.6, margin: 0 }}>
+                {currentCase[0].case_context}
+              </p>
+            </div>
 
-    {/* Sub-questions in order */}
-    {currentCase.map((subQ, i) => (
-      <div key={subQ.id}>
-        {subQ.additional_context && (
-          <div className="additional-context">
-            <span className="pixel-label" style={{ fontSize: '7px' }}>✦ ADDITIONAL INFO</span>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', margin: '4px 0 0' }}>
-              {subQ.additional_context}
-            </p>
+            {currentCase.map((subQ) => (
+              <div key={subQ.id}>
+                {subQ.additional_context && (
+                  <div className="additional-context">
+                    <span className="pixel-label" style={{ fontSize: '7px' }}>✦ ADDITIONAL INFO</span>
+                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', margin: '4px 0 0' }}>
+                      {subQ.additional_context}
+                    </p>
+                  </div>
+                )}
+                <SAQCard
+                  key={subQ.id}
+                  question={subQ}
+                  userAnswer={answers[subQ.id] ?? ''}
+                  showFeedback={feedbackMode === 'immediate'}
+                  onAnswer={val => answer(subQ.id, val)}
+                  timeExpired={timerMode === 'total' && totalTimeSeconds === 0}
+                  hideContext
+                />
+              </div>
+            ))}
           </div>
-        )}
-        <SAQCard
-          key={subQ.id}
-          question={subQ}
-          userAnswer={answers[subQ.id] ?? ''}
-          showFeedback={feedbackMode === 'immediate'}
-          onAnswer={val => answer(subQ.id, val)}
-          timeExpired={timerMode === 'total' && totalTimeSeconds === 0}
-          hideContext
-        />
-      </div>
-    ))}
-  </div>
-) : !isSAQ ? (
-  <QuizCard
-    key={q.id}
-    question={questions[current]}
-    chosen={chosen as AnswerOption}
-    showFeedback={feedbackMode === 'immediate'}
-    onAnswer={val => answer(q.id, val)}
-  />
-) : null}
+        ) : !isSAQ && q ? (
+          <QuizCard
+            key={q.id}
+            question={questions[current]}
+            chosen={chosen as AnswerOption}
+            showFeedback={feedbackMode === 'immediate'}
+            onAnswer={val => answer(q.id, val)}
+          />
+        ) : null}
 
         <div className="quiz-nav">
           <button className="btn-kawaii" onClick={prev} disabled={current === 0}>
