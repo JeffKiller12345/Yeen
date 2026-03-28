@@ -3,10 +3,11 @@ import { useEffect, useState, useCallback } from 'react'
 import { useQuizSession } from '@/lib/quizSession'
 
 interface Props {
+  totalSeconds: number;
   onExpire: () => void
 }
 
-export default function TotalTimer({ onExpire }: Props) {
+export default function TotalTimer({ totalSeconds, onExpire }: Props) {
   // 1. Grab ONLY the timestamp. This component only re-renders if 
   // the timestamp itself changes (which only happens at quiz start).
   const expiryTimestamp = useQuizSession(s => s.expiryTimestamp)
