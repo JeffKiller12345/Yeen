@@ -5,11 +5,11 @@ import KawaiiLayout from '@/components/KawaiiLayout'
 import TopicSelector from '@/components/TopicSelector'
 import ModeSelector from '@/components/ModeSelector'
 import { selectQuestions } from '@/lib/questionUtils'
-import { buildMockPaper } from '@/lib/mockPaper'
+import MockSelector from '@/components/MockSelector'
 import { useQuizSession } from '@/lib/quizSession'
 import topicsIndex from '@/data/topicsIndex.json'
 import { supabase } from '@/lib/supabase'
-import type { Question, QuizSession, StudyFeedbackMode, SeenMode } from '@/types'
+import type { Question, QuizSession, StudyFeedbackMode, SeenMode, SAQQuestion } from '@/types'
 
 export default function Dashboard() {
 const [questions, setQuestions] = useState<Question[]>([])
@@ -54,9 +54,38 @@ useEffect(() => {
   fetchAllQuestions()
 }, [])
 
+useEffect(() => {
+  async function fetchSAQs() {
+    const batchSize = 1000
+    let page = 0
+    let all: SAQQuestion[] = []
+    let keepFetching = true
+    while (keepFetching) {
+      const { data, error } = await supabase
+        .from('saq_questions')
+        .select('*')
+        .range(page * batchSize, (page + 1) * batchSize - 1)
+      if (error) { console.error(error); break }
+      const parsed = (data ?? []).map(q => ({
+        ...q,
+        acceptable_answers: typeof q.acceptable_answers === 'string'
+          ? JSON.parse(q.acceptable_answers)
+          : q.acceptable_answers
+      }))
+      all = [...all, ...parsed]
+      if (!data || data.length < batchSize) keepFetching = false
+      else page++
+    }
+    setSaqQuestions(all)
+  }
+  fetchSAQs()
+}, [])
+
   const router = useRouter()
   const init = useQuizSession((s: QuizSession) => s.init)
-
+  const [questionType, setQuestionType] = useState<'mcq' | 'saq'>('mcq')
+  const [saqQuestions, setSaqQuestions] = useState<SAQQuestion[]>([])
+  const initSAQ = useQuizSession((s: QuizSession) => s.initSAQ)
   const [selections, setSelections] = useState<Record<string, Record<string, number>>>({})
   const [examMode, setExamMode]         = useState(false)
   const [feedbackMode, setFeedbackMode] = useState<StudyFeedbackMode>('immediate')
@@ -68,20 +97,63 @@ useEffect(() => {
     .flatMap(s => Object.values(s))
     .reduce((a, b) => a + b, 0)
 
+  const shuffle = (arr: any[]) => [...arr].sort(() => Math.random() - 0.5);
+
   const startCustom = () => {
-    if (totalSelected === 0) {
-      setError('Please select at least one topic and question count.')
-      return
+    if (questionType === 'saq') {
+      const filtered = saqQuestions.filter(q =>
+        Object.entries(selections).some(([topic, subs]) =>
+          q.topic === topic && Object.keys(subs).includes(q.subtopic)
+        )
+      )
+      if (filtered.length === 0) { setError('No SAQ questions match your selection.'); return }
+      initSAQ(filtered, examMode ? 'exam' : 'study', feedbackMode)
+      router.push('/quiz')
+      return 
     }
-    setError('')
-    const q = selectQuestions(questions as any, { selections, seenMode })
-    if (q.length === 0) {
-      setError('No questions match your current filters. Try changing the "Question Pool" setting.')
-      return
+    
+    // Logic for MCQ (standard questions)
+    const selectedMcqs = selectQuestions(questions as any, { selections, seenMode })
+    if (selectedMcqs.length === 0) { setError('No MCQ questions match.'); return }
+    init(selectedMcqs, examMode ? 'exam' : 'study', feedbackMode)
+    router.push('/quiz')
+  } // <--- Added missing brace
+
+  const startCustomSAQ = () => {
+    const result: SAQQuestion[] = []
+    for (const [topic, subtopics] of Object.entries(selections)) {
+      for (const [subtopic, count] of Object.entries(subtopics)) {
+        const pool = saqQuestions.filter(
+          q => q.topic === topic && q.subtopic === subtopic
+        )
+        result.push(...shuffle(pool).slice(0, count))
+      }
     }
-    init(q, examMode ? 'exam' : 'study', feedbackMode)
+    if (result.length === 0) { setError('No SAQ questions match your selection.'); return }
+    const shuffled = shuffle(result)
+    const totalMarks = shuffled.reduce((a, q) => a + (q.marks || 0), 0)
+    const totalTimeSeconds = examMode ? totalMarks * 75 : 0
+    initSAQ(shuffled, examMode ? 'exam' : 'study', feedbackMode, totalTimeSeconds)
     router.push('/quiz')
   }
+
+const startCustomSAQ = () => {
+  const result: SAQQuestion[] = []
+  for (const [topic, subtopics] of Object.entries(selections)) {
+    for (const [subtopic, count] of Object.entries(subtopics)) {
+      const pool = saqQuestions.filter(
+        q => q.topic === topic && q.subtopic === subtopic
+      )
+      result.push(...shuffle(pool).slice(0, count))
+    }
+  }
+  if (result.length === 0) { setError('No SAQ questions match your selection.'); return }
+  const shuffled = shuffle(result)
+  const totalMarks = shuffled.reduce((a, q) => a + q.marks, 0)
+  const totalTimeSeconds = examMode ? totalMarks * 75 : 0
+  initSAQ(shuffled, examMode ? 'exam' : 'study', feedbackMode, totalTimeSeconds)
+  router.push('/quiz')
+}
 
   const startMock = () => {
     if (questions.length === 0) {
@@ -89,7 +161,7 @@ useEffect(() => {
     return
   }
   console.log('Total questions available for mock:', questions.length)
-  const q = buildMockPaper(questions as any, topics)
+  const q = MockSelector(questions as any, topics)
   console.log('Mock paper size:', q.length)
   init(q, examMode ? 'exam' : 'study', feedbackMode)
   router.push('/quiz')
@@ -107,7 +179,10 @@ useEffect(() => {
     const response = await fetch('/api/export', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questions: q }),
+      body: JSON.stringify({ 
+        questions: q,
+        questionType
+      }),
     })
     
     if (!response.ok) throw new Error('Export failed')
@@ -165,7 +240,7 @@ useEffect(() => {
 
           <div className="action-secondary">
             <button className="btn-kawaii green" onClick={startMock}>
-              ★ MOCK PAPER
+              START MOCK EXAM
             </button>
             <button className="btn-kawaii" onClick={handleExport}>
               ⬇ EXPORT PDF
@@ -176,7 +251,7 @@ useEffect(() => {
         {/* Mock paper info */}
         <div className="mock-info kawaii-panel">
           <p className="pixel-label" style={{ marginBottom: '8px' }}>
-            ★ MOCK PAPER FORMAT
+            ★ SBA MOCK PAPER FORMAT
           </p>
           <p className="info-text">
             Automatically pulls <strong>10 questions</strong> each from

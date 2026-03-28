@@ -4,7 +4,52 @@ import type { Question } from '@/types'
 import { z } from 'zod'
 
 const schema = z.object({
-  questions: z.array(z.object({
+  questions: z.array(z.any()).min(1).max(500),
+  questionType: z.enum(['mcq', 'saq']).default('mcq')
+})
+
+// Then branch the PDF generation:
+if (questionType === 'saq') {
+  // SAQ format
+  questions.forEach((q: any, i: number) => {
+    checkPage(50)
+    doc.setFontSize(8)
+    doc.setTextColor(150)
+    doc.text(`${q.topic} › ${q.subtopic}`, margin, y)
+    y += 5
+
+    // Case context
+    if (q.case_context) {
+      const caseLines = doc.splitTextToSize(`Context: ${q.case_context}`, maxW)
+      checkPage(caseLines.length * 5)
+      doc.setFontSize(9)
+      doc.setTextColor(80)
+      doc.setFont('helvetica', 'italic')
+      doc.text(caseLines, margin, y)
+      y += caseLines.length * 5 + 3
+    }
+
+    // Question + marks
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(0)
+    doc.text(`Q${i + 1}. [${q.marks} mark${q.marks > 1 ? 's' : ''}]`, margin, y)
+    y += 5
+
+    doc.setFont('helvetica', 'normal')
+    const stemLines = doc.splitTextToSize(q.question, maxW)
+    doc.text(stemLines, margin, y)
+    y += stemLines.length * 5 + 3
+
+    // Answer lines
+    for (let l = 0; l < q.marks; l++) {
+      doc.setDrawColor(180)
+      doc.line(margin, y + 6, pageW - margin, y + 6)
+      y += 10
+    }
+    y += 4
+  })
+} else {
     id: z.string(),
     topic: z.string(),
     subtopic: z.string(),

@@ -1,5 +1,5 @@
 'use client'
-import type { QuizMode, StudyFeedbackMode, SeenMode } from '@/types'
+import type { StudyFeedbackMode, SeenMode } from '@/types'
 
 interface Props {
   examMode: boolean
@@ -8,12 +8,15 @@ interface Props {
   onFeedbackModeChange: (v: StudyFeedbackMode) => void
   seenMode: SeenMode
   onSeenModeChange: (v: SeenMode) => void
+  questionType: 'mcq' | 'saq'
+  onQuestionTypeChange: (v: 'mcq' | 'saq') => void
 }
 
 export default function ModeSelector({
   examMode, onExamModeChange,
   feedbackMode, onFeedbackModeChange,
   seenMode, onSeenModeChange,
+  questionType, onQuestionTypeChange, // 1. Added these two here!
 }: Props) {
   return (
     <div className="mode-selector kawaii-panel">
@@ -36,6 +39,28 @@ export default function ModeSelector({
               <span className="toggle-thumb" />
             </span>
           </label>
+        </div>
+
+        {/* 2. Fixed the function names below to match the props */}
+        <div className="mode-row">
+          <div className="mode-info">
+            <span className="mode-name">Question Type</span>
+            <span className="mode-desc">MCQ or Short Answer</span>
+          </div>
+          <div className="pill-toggle">
+            <button
+              className={`pill ${questionType === 'mcq' ? 'active' : ''}`}
+              onClick={() => onQuestionTypeChange('mcq')}
+            >
+              MCQ
+            </button>
+            <button
+              className={`pill ${questionType === 'saq' ? 'active' : ''}`}
+              onClick={() => onQuestionTypeChange('saq')}
+            >
+              SAQ
+            </button>
+          </div>
         </div>
 
         {/* Feedback timing */}
@@ -80,6 +105,7 @@ export default function ModeSelector({
         </div>
       </div>
 
+      {/* Styles remain the same */}
       <style jsx>{`
         .mode-selector { margin-bottom: 20px; }
 

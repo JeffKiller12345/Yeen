@@ -1,21 +1,24 @@
-const STORAGE_KEY = 'medquiz_seen_ids'
+const MCQ_KEY = 'medquiz_seen_ids'
+const SAQ_KEY = 'medquiz_seen_saq_ids'
 
-export function getSeenIds(): Set<string> {
-  if (typeof window === 'undefined') return new Set()
+export function getSeenIds(type: 'mcq' | 'saq' = 'mcq'): Set<string> {
+  const key = type === 'saq' ? SAQ_KEY : MCQ_KEY
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(key)
     return raw ? new Set(JSON.parse(raw)) : new Set()
   } catch { return new Set() }
 }
 
-export function markSeen(ids: string[]) {
-  const current = getSeenIds()
+export function markSeen(ids: string[], type: 'mcq' | 'saq' = 'mcq') {
+  const key = type === 'saq' ? SAQ_KEY : MCQ_KEY
+  const current = getSeenIds(type)
   ids.forEach(id => current.add(id))
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...current]))
+  localStorage.setItem(key, JSON.stringify([...current]))
 }
 
 export function clearSeen() {
-  localStorage.removeItem(STORAGE_KEY)
+  localStorage.removeItem(MCQ_KEY)
+  localStorage.removeItem(SAQ_KEY)
 }
 
 export function filterBySeenStatus<T extends { id: string }>(

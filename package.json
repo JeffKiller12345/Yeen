@@ -9,7 +9,8 @@
     "build:topics": "ts-node --project tsconfig.json scripts/buildTopicsIndex.ts",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "generate:mocks": "ts-node --project tsconfig.json scripts/generateMocks.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "^3.4.0",
@@ -27,6 +28,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "dotenv": "^16.6.1",
     "ts-node": "^10.9.2",
     "typescript": "^5"
   }

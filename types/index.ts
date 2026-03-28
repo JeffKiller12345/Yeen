@@ -15,6 +15,13 @@ export interface Question {
   generated_at: string
 }
 
+export interface SAQResult {
+  question: SAQQuestion
+  userAnswer: string
+  awarded: boolean
+  flagged: boolean
+}
+
 export type AnswerOption = 'A' | 'B' | 'C' | 'D' | 'E'
 
 export type QuizMode = 'study' | 'exam'
@@ -38,20 +45,46 @@ export interface QuizResult {
 
 export type TopicsIndex = Record<string, string[]>
 
-// Add to existing src/types/index.ts
 export interface QuizSession {
   questions: Question[]
+  saqQuestions: SAQQuestion[]
+  questionType: QuestionType
   current: number
   answers: Record<string, string>
   flagged: Set<string>
   mode: QuizMode
   feedbackMode: StudyFeedbackMode
   timePerQuestion: number
+  timerMode: 'per_question' | 'total'  
+  totalTimeSeconds: number               
   startTime: number | null
-  init: (questions: Question[], mode: QuizMode, feedbackMode: StudyFeedbackMode) => void
-  answer: (id: string, option: AnswerOption) => void
+  init: (questions: Question[], mode: QuizMode, feedbackMode: StudyFeedbackMode, questionType?: QuestionType) => void
+  initSAQ: (questions: SAQQuestion[], mode: QuizMode, feedbackMode: StudyFeedbackMode) => void
+  answer: (id: string, value: string) => void
   toggleFlag: (id: string) => void
   next: () => void
   prev: () => void
   finish: () => void
+}
+
+export interface SAQQuestion {
+  id: string
+  topic: string
+  subtopic: string
+  case_context: string
+  additional_context: string
+  question: string
+  marks: number
+  acceptable_answers: string[]
+  feedback: string
+  generated_at: string
+}
+
+export type QuestionType = 'mcq' | 'saq'
+
+export interface SAQResult {
+  question: SAQQuestion
+  userAnswer: string
+  awarded: boolean
+  flagged: boolean
 }
