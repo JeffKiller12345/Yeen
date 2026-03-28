@@ -192,21 +192,11 @@ export default function Dashboard() {
               ⬇ EXPORT PDF
             </button>
           </div>
-
-          <MockSelector />
-
-        <div className="mock-info kawaii-panel">
-          <p className="pixel-label" style={{ marginBottom: '8px' }}>
-            ★ SBA MOCK PAPER FORMAT
-          </p>
-          <p className="info-text">
-            Automatically pulls <strong>10 questions</strong> each from
-            Microbiology, Respiratory, Cardiovascular, GI/Hepatic, and
-            Neurology — and <strong>5 questions</strong> from every other
-            topic in the bank.
-          </p>
-        </div>
       </div>
+
+      <MockSelector />
+
+  </div>
 
       <style jsx>{`
         .dashboard { display: flex; flex-direction: column; gap: 16px; max-width: 720px; margin: 0 auto; }
