@@ -45,14 +45,14 @@ export default function ModeSelector({
         <div className="mode-row">
           <div className="mode-info">
             <span className="mode-name">Question Type</span>
-            <span className="mode-desc">MCQ or Short Answer</span>
+            <span className="mode-desc">SBA or SAQ</span>
           </div>
           <div className="pill-toggle">
             <button
               className={`pill ${questionType === 'mcq' ? 'active' : ''}`}
               onClick={() => onQuestionTypeChange('mcq')}
             >
-              MCQ
+              SBA
             </button>
             <button
               className={`pill ${questionType === 'saq' ? 'active' : ''}`}
