@@ -5,8 +5,8 @@ import { signIn } from 'next-auth/react'
 const POSTERS = [
   '/images/poster1.JPG',
   '/images/poster2.JPG',
-  '/images/poster3.JPG',
   '/images/poster4.JPG',
+  '/images/poster3.JPG',
   '/images/poster5.JPG',
   '/images/poster6.JPG',
   '/images/poster7.JPG',
@@ -69,22 +69,24 @@ export default function LoginPage() {
 
         /* ── Poster grid ── */
         .poster-grid {
-          position: absolute;
-          inset: -40px;                /* bleed past the edges so corners are filled */
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 12px;
-          padding: 12px;
-          z-index: 0;
-        }
+  position: absolute;
+  inset: -40px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);   /* ← 4 cols fits portrait better on laptop */
+  grid-auto-rows: auto;                     /* ← rows size to the tile content */
+  align-content: start;
+  gap: 12px;
+  padding: 12px;
+  z-index: 0;
+}
 
         .poster-tile {
-          border-radius: 6px;
-          overflow: hidden;
-          transform: rotate(var(--rotation));
-          box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-          transition: transform 0.3s ease;
-        }
+  border-radius: 6px;
+  overflow: hidden;
+  transform: rotate(var(--rotation));
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  aspect-ratio: 2 / 3;   /* ← standard portrait poster ratio */
+}
 
         .poster-tile img {
           width: 100%;
