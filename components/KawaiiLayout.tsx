@@ -1,6 +1,18 @@
 'use client'
 import { ReactNode } from 'react'
 
+const POSTERS = [
+  '/images/poster1.JPG',
+  '/images/poster2.JPG',
+  '/images/poster4.JPG',
+  '/images/poster3.JPG',
+  '/images/poster5.JPG',
+  '/images/poster6.JPG',
+  '/images/poster7.JPG',
+  '/images/poster8.JPG',
+  '/images/poster9.JPG',
+]
+
 interface Props {
   children: ReactNode
   title?: string
@@ -11,6 +23,25 @@ export default function KawaiiLayout({ children, title, subtitle }: Props) {
   return (
     <div className="kawaii-root">
       {/* Dot-grid background handled by body CSS */}
+<div className="kawaii-root">
+  {/* Left poster strip */}
+  <div className="poster-strip poster-strip-left" aria-hidden="true">
+    {POSTERS.map((src, i) => (
+      <div key={i} className="poster-tile" style={{ '--rotation': `${(i % 2 === 0 ? 1 : -1) * (1 + (i % 3))}deg` } as React.CSSProperties}>
+        <img src={src} alt="" draggable={false} />
+      </div>
+    ))}
+  </div>
+
+  {/* Right poster strip */}
+  <div className="poster-strip poster-strip-right" aria-hidden="true">
+    {[...POSTERS].reverse().map((src, i) => (
+      <div key={i} className="poster-tile" style={{ '--rotation': `${(i % 2 === 0 ? -1 : 1) * (1 + (i % 3))}deg` } as React.CSSProperties}>
+        <img src={src} alt="" draggable={false} />
+      </div>
+    ))}
+  </div>
+
 
       {/* Site header banner */}
       <header className="kawaii-header">
