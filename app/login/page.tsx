@@ -25,7 +25,7 @@ export default function LoginPage() {
           <div
             key={i}
             className="poster-tile"
-            style={{ '--rotation': `${(i % 2 === 0 ? 1 : -1) * (1 + (i % 4))}deg` }}
+            style={{ '--rotation': `${(i % 2 === 0 ? 1 : -1) * (1 + (i % 4))}deg` } as React.CSSProperties}
           >
             <img src={src} alt="" draggable={false} />
           </div>
