@@ -119,7 +119,7 @@ export default function KawaiiLayout({ children, title, subtitle }: Props) {
 .strip-overlay {
   position: absolute;
   inset: 0;
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(1px);
   background: rgba(255, 230, 240, 0.45);
   pointer-events: none;
 }
