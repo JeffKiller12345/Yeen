@@ -183,7 +183,7 @@ export default function QuizPage() {
 
       <style jsx>{`
         .quiz-layout { display: flex; flex-direction: column; gap: 20px; max-width: 720px; margin: 0 auto; }
-        .quiz-topbar { display: flex; flex-direction: column; gap: 10px; position: sticky; top: 0; z-index: 50; background: var(--pink-light); padding: 8px 0 4px; }
+        .quiz-topbar { display: flex; flex-direction: column; gap: 10px; }
         .quiz-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
         .quiz-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 16px; border-top: 2px dashed var(--pink-mid); }
         .question-counter { font-size: 8px; color: #aaa; }
