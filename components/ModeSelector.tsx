@@ -27,7 +27,7 @@ export default function ModeSelector({
         <div className="mode-row">
           <div className="mode-info">
             <span className="mode-name">Exam Mode</span>
-            <span className="mode-desc">1.2 min per question timer</span>
+            <span className="mode-desc">Global countdown timer</span>
           </div>
           <label className="kawaii-toggle">
             <input

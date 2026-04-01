@@ -25,20 +25,20 @@ export function selectQuestions(
   const result: Question[] = []
 
   for (const [topic, subtopics] of Object.entries(selections)) {
-    for (const [subtopic, count] of Object.entries(subtopics)) {
-      let pool = bank.filter(
-        q => q.topic === topic && q.subtopic === subtopic
-      )
+    // Sum the requested count across all subtopics for this topic
+    const totalCount = Object.values(subtopics).reduce((sum, count) => sum + count, 0)
+    if (totalCount === 0) continue
 
-      if (seenMode === 'unseen') {
-        pool = pool.filter(q => !seen.has(q.id))
-      } else if (seenMode === 'seen') {
-        pool = pool.filter(q => seen.has(q.id))
-      }
+    // Pool ALL questions for the topic regardless of subtopic, then sample randomly
+    let pool = bank.filter(q => q.topic === topic)
 
-      const picked = shuffle(pool).slice(0, count as number)
-      result.push(...picked)
+    if (seenMode === 'unseen') {
+      pool = pool.filter(q => !seen.has(q.id))
+    } else if (seenMode === 'seen') {
+      pool = pool.filter(q => seen.has(q.id))
     }
+
+    result.push(...shuffle(pool).slice(0, totalCount))
   }
 
   return shuffle(result)

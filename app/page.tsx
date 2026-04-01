@@ -101,7 +101,9 @@ export default function Dashboard() {
     }
     const selectedMcqs = selectQuestions(questions as any, { selections, seenMode })
     if (selectedMcqs.length === 0) { setError('No MCQ questions match.'); return }
-    init(selectedMcqs, examMode ? 'exam' : 'study', feedbackMode)
+    // Exam mode: 90 seconds per question (1.5 min) as a global countdown
+    const timerOverride = examMode ? selectedMcqs.length * 90 : undefined
+    init(selectedMcqs, examMode ? 'exam' : 'study', feedbackMode, 'mcq', timerOverride)
     router.push('/quiz')
   }
 
@@ -134,7 +136,11 @@ export default function Dashboard() {
     }
 
     if (result.length === 0) { setError('No SAQ questions match your selection.'); return }
-    initSAQ(result, examMode ? 'exam' : 'study', feedbackMode)
+    // Exam mode: 60 seconds per mark as a global countdown (matches 120 marks = 120 min spec)
+    const MIN_SAQ_EXAM_TIME_SECONDS = 1800 // 30 minutes minimum
+    const totalMarks = result.reduce((sum, q) => sum + (q.marks || 0), 0)
+    const timerOverride = examMode ? Math.max(totalMarks * 60, MIN_SAQ_EXAM_TIME_SECONDS) : undefined
+    initSAQ(result, examMode ? 'exam' : 'study', feedbackMode, timerOverride)
     router.push('/quiz')
   }
   

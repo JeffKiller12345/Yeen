@@ -12,6 +12,33 @@ export default function KawaiiLayout({ children, title, subtitle }: Props) {
     <div className="kawaii-root">
       {/* Dot-grid background handled by body CSS */}
 
+      {/* Decorative side posters — only visible on very wide screens */}
+      <div className="side-deco side-deco-left" aria-hidden>
+        <img
+          src="https://placehold.co/110x160/fce4ec/c2185b?text=STUDY%0ATIME"
+          alt=""
+          className="deco-poster"
+        />
+        <img
+          src="https://placehold.co/110x110/e8f5e9/2e7d32?text=YOU%0AGOT%0ATHIS"
+          alt=""
+          className="deco-sticker"
+        />
+      </div>
+
+      <div className="side-deco side-deco-right" aria-hidden>
+        <img
+          src="https://placehold.co/110x150/fce4ec/c2185b?text=KEEP%0AGOING"
+          alt=""
+          className="deco-poster"
+        />
+        <img
+          src="https://placehold.co/110x110/fff9c4/f57f17?text=GOOD%0ALUCK"
+          alt=""
+          className="deco-sticker"
+        />
+      </div>
+
       {/* Site header banner */}
       <header className="kawaii-header">
         <div className="header-inner">
@@ -64,6 +91,30 @@ export default function KawaiiLayout({ children, title, subtitle }: Props) {
           flex-direction: column;
           align-items: center;
           padding: 0 16px 48px;
+        }
+
+        /* ── Side decoration posters ── */
+        .side-deco {
+          position: fixed;
+          top: 140px;
+          display: none;
+          flex-direction: column;
+          gap: 16px;
+          z-index: 0;
+        }
+
+        @media (min-width: 1200px) {
+          .side-deco { display: flex; }
+        }
+
+        .side-deco-left  { left: 16px; }
+        .side-deco-right { right: 16px; }
+
+        .deco-poster, .deco-sticker {
+          display: block;
+          border: 3px solid var(--pink-mid);
+          box-shadow: 4px 4px 0 var(--pink-mid);
+          max-width: 110px;
         }
 
         .kawaii-header {

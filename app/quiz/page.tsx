@@ -22,6 +22,7 @@ export default function QuizPage() {
 
   const [startTime] = useState(Date.now())
   const [timerKey, setTimerKey] = useState(0)
+  const [timesUp, setTimesUp] = useState(false)
 
   const isSAQ = questionType === 'saq'
 
@@ -89,8 +90,13 @@ export default function QuizPage() {
   }
 
   const handleTimerExpire = () => {
+    // Per-question timer: advance to next question
     if (isLast) handleFinish()
     else { next(); setTimerKey(k => k + 1) }
+  }
+
+  const handleTotalTimerExpire = () => {
+    setTimesUp(true)
   }
 
   return (
@@ -103,7 +109,7 @@ export default function QuizPage() {
             {isExam && timerMode === 'total' && (
               <TotalTimer
                 totalSeconds={totalTimeSeconds}
-                onExpire={handleFinish}
+                onExpire={handleTotalTimerExpire}
               />
             )}
             {isExam && timerMode === 'per_question' && (
@@ -177,14 +183,59 @@ export default function QuizPage() {
 
       <style jsx>{`
         .quiz-layout { display: flex; flex-direction: column; gap: 20px; max-width: 720px; margin: 0 auto; }
-        .quiz-topbar { display: flex; flex-direction: column; gap: 10px; }
+        .quiz-topbar { display: flex; flex-direction: column; gap: 10px; position: sticky; top: 0; z-index: 50; background: var(--pink-light); padding: 8px 0 4px; }
         .quiz-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
         .quiz-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 16px; border-top: 2px dashed var(--pink-mid); }
         .question-counter { font-size: 8px; color: #aaa; }
         .saq-case { display: flex; flex-direction: column; gap: 12px; }
         .additional-context { padding: 8px 12px; background: #fff8e1; border: 2px solid #ffe082; }
         .btn-kawaii:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        .timesup-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.55);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 200;
+        }
+        .timesup-modal {
+          max-width: 380px;
+          width: 90%;
+          text-align: center;
+          padding: 32px 28px;
+          animation: pop-in 0.2s ease-out;
+        }
+        .timesup-modal .timesup-icon {
+          font-size: 32px;
+          margin-bottom: 12px;
+        }
+        .timesup-modal p {
+          font-family: var(--font-body);
+          font-size: 13px;
+          color: #555;
+          margin: 8px 0 20px;
+          line-height: 1.6;
+        }
+        @keyframes pop-in {
+          from { transform: scale(0.85); opacity: 0; }
+          to   { transform: scale(1);    opacity: 1; }
+        }
       `}</style>
+
+      {timesUp && (
+        <div className="timesup-overlay">
+          <div className="timesup-modal kawaii-panel">
+            <div className="timesup-icon">⏰</div>
+            <p className="pixel-label" style={{ fontSize: '10px', marginBottom: '4px' }}>TIME&apos;S UP!</p>
+            <p>Your time has expired. Please submit your quiz now.</p>
+            <button className="btn-kawaii" onClick={handleFinish} style={{ fontSize: '9px', padding: '12px 24px' }}>
+              ★ AUTO-SUBMIT
+            </button>
+          </div>
+        </div>
+      )}
     </KawaiiLayout>
   )
 }
