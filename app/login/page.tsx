@@ -23,15 +23,15 @@ export default function LoginPage() {
       {/* ── Poster collage background ── */}
       <div className="poster-grid" aria-hidden="true">
         {POSTER_TILES.map((src, i) => (
-          <div
-            key={i}
-            className="poster-tile"
-            style={{ '--rotation': `${(i % 2 === 0 ? 1 : -1) * (1 + (i % 4))}deg` } as React.CSSProperties}
-          >
-            <img src={src} alt="" draggable={false} />
-          </div>
-        ))}
-      </div>
+  <div key={i} className="poster-tile">
+    <div
+      className="poster-inner"
+      style={{ '--rotation': `${(i % 2 === 0 ? 1 : -1) * (1 + (i % 4))}deg` } as React.CSSProperties}
+    >
+      <img src={src} alt="" draggable={false} />
+    </div>
+  </div>
+))}
 
       {/* ── Frosted overlay so posters don't overpower the card ── */}
       <div className="poster-overlay" aria-hidden="true" />
@@ -91,22 +91,27 @@ export default function LoginPage() {
 }
 
         .poster-tile {
+  aspect-ratio: 2 / 3;
   border-radius: 6px;
-  overflow: hidden;
-  transform: rotate(var(--rotation));
-  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-  aspect-ratio: 2 / 3;   /* ← standard portrait poster ratio */
+  overflow: hidden;        /* clips the rotated inner so it doesn't bleed */
 }
 
-        .poster-tile img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-          user-select: none;
-          pointer-events: none;
-        }
+.poster-inner {
+  width: 105%;             /* slightly oversized so rotation gaps don't show */
+  height: 105%;
+  margin: -2.5%;
+  transform: rotate(var(--rotation));
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
 
+.poster-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
         /* ── Frosted overlay ── */
         .poster-overlay {
           position: absolute;
