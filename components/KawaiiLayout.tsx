@@ -1,5 +1,6 @@
 'use client'
 import { ReactNode } from 'react'
+import React from 'react'
 
 const POSTERS = [
   '/images/poster1.JPG',
@@ -23,7 +24,6 @@ export default function KawaiiLayout({ children, title, subtitle }: Props) {
   return (
     <div className="kawaii-root">
       {/* Dot-grid background handled by body CSS */}
-<div className="kawaii-root">
   {/* Left poster strip */}
   <div className="poster-strip poster-strip-left" aria-hidden="true">
     {POSTERS.map((src, i) => (
