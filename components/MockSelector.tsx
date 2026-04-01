@@ -35,11 +35,15 @@ export default function MockSelector() {
       if (mock.type === 'sba') {
         const questions = await loadSBAMock(mock)
         setLoadingProgress(`Loaded ${questions.length} questions`)
-        init(questions, 'exam', 'end', 'mcq')
+        // Use mock's time_seconds if set; fall back to 150 minutes for SBA
+        const sbaTimer = (mock.time_seconds ?? 0) > 0 ? mock.time_seconds : 9000
+        init(questions, 'exam', 'end', 'mcq', sbaTimer)
       } else {
         const questions = await loadSAQMock(mock)
         setLoadingProgress(`Loaded ${questions.length} questions`)
-        initSAQ(questions, 'exam', 'end')
+        // Use mock's time_seconds if set; fall back to 120 minutes for SAQ
+        const saqTimer = (mock.time_seconds ?? 0) > 0 ? mock.time_seconds : 7200
+        initSAQ(questions, 'exam', 'end', saqTimer)
       }
       router.push('/quiz')
     } catch (err) {

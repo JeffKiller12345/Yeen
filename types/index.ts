@@ -58,8 +58,8 @@ export interface QuizSession {
   timerMode: 'per_question' | 'total'  
   totalTimeSeconds: number               
   startTime: number | null
-  init: (questions: Question[], mode: QuizMode, feedbackMode: StudyFeedbackMode, questionType?: QuestionType) => void
-  initSAQ: (questions: SAQQuestion[], mode: QuizMode, feedbackMode: StudyFeedbackMode) => void
+  init: (questions: Question[], mode: QuizMode, feedbackMode: StudyFeedbackMode, questionType?: QuestionType, timerOverride?: number) => void
+  initSAQ: (questions: SAQQuestion[], mode: QuizMode, feedbackMode: StudyFeedbackMode, totalTimeSeconds?: number) => void
   answer: (id: string, value: string) => void
   toggleFlag: (id: string) => void
   next: () => void
