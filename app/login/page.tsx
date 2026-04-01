@@ -99,7 +99,7 @@ export default function LoginPage() {
         .poster-overlay {
           position: absolute;
           inset: 0;
-          backdrop-filter: blur(3px);
+          backdrop-filter: blur(1px);
           background: rgba(255, 230, 240, 0.45); /* tint with your --pink-light */
           z-index: 1;
         }
