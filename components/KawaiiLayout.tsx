@@ -97,6 +97,40 @@ export default function KawaiiLayout({ children, title, subtitle }: Props) {
           padding: 0 16px 48px;
         }
 
+/* ── Side poster strips ── */
+.poster-strip {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: calc((100vw - 900px) / 2 - 12px); /* fills the gap beside the 900px content */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.poster-strip-left  { left: 0; }
+.poster-strip-right { right: 0; }
+
+.poster-tile {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border-radius: 6px;
+  overflow: hidden;
+  transform: rotate(var(--rotation));
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  flex-shrink: 0;
+}
+
+.poster-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
 
         .kawaii-header {
           width: 100%;
