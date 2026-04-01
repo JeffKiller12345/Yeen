@@ -24,23 +24,25 @@ export default function KawaiiLayout({ children, title, subtitle }: Props) {
   return (
     <div className="kawaii-root">
       {/* Dot-grid background handled by body CSS */}
-  {/* Left poster strip */}
-  <div className="poster-strip poster-strip-left" aria-hidden="true">
-    {POSTERS.map((src, i) => (
-      <div key={i} className="poster-tile" style={{ '--rotation': `${(i % 2 === 0 ? 1 : -1) * (1 + (i % 3))}deg` } as React.CSSProperties}>
-        <img src={src} alt="" draggable={false} />
-      </div>
-    ))}
-  </div>
+{/* Left poster strip */}
+<div className="poster-strip poster-strip-left" aria-hidden="true">
+  {POSTERS.map((src, i) => (
+    <div key={i} className="poster-tile" style={{ '--rotation': `${(i % 2 === 0 ? 1 : -1) * (1 + (i % 3))}deg` } as React.CSSProperties}>
+      <img src={src} alt="" draggable={false} />
+    </div>
+  ))}
+  <div className="strip-overlay" />
+</div>
 
-  {/* Right poster strip */}
-  <div className="poster-strip poster-strip-right" aria-hidden="true">
-    {[...POSTERS].reverse().map((src, i) => (
-      <div key={i} className="poster-tile" style={{ '--rotation': `${(i % 2 === 0 ? -1 : 1) * (1 + (i % 3))}deg` } as React.CSSProperties}>
-        <img src={src} alt="" draggable={false} />
-      </div>
-    ))}
-  </div>
+{/* Right poster strip */}
+<div className="poster-strip poster-strip-right" aria-hidden="true">
+  {[...POSTERS].reverse().map((src, i) => (
+    <div key={i} className="poster-tile" style={{ '--rotation': `${(i % 2 === 0 ? -1 : 1) * (1 + (i % 3))}deg` } as React.CSSProperties}>
+      <img src={src} alt="" draggable={false} />
+    </div>
+  ))}
+  <div className="strip-overlay" />
+</div>
 
 
       {/* Site header banner */}
@@ -95,11 +97,12 @@ export default function KawaiiLayout({ children, title, subtitle }: Props) {
           flex-direction: column;
           align-items: center;
           padding: 0 16px 48px;
+          position: relative; 
         }
 
 /* ── Side poster strips ── */
 .poster-strip {
-  position: fixed;
+  position: absolute;
   top: 0;
   bottom: 0;
   width: calc((100vw - 900px) / 2 - 12px); /* fills the gap beside the 900px content */
@@ -112,6 +115,15 @@ export default function KawaiiLayout({ children, title, subtitle }: Props) {
 
 .poster-strip-left  { left: 0; }
 .poster-strip-right { right: 0; }
+
+.strip-overlay {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(3px);
+  background: rgba(255, 230, 240, 0.45);
+  pointer-events: none;
+}
+
 
 .poster-tile {
   width: 100%;
@@ -130,6 +142,10 @@ export default function KawaiiLayout({ children, title, subtitle }: Props) {
   display: block;
   pointer-events: none;
   user-select: none;
+}
+
+@media (max-width: 960px) {
+  .poster-strip { display: none; }
 }
 
         .kawaii-header {
