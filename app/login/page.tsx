@@ -59,6 +59,16 @@ export default function LoginPage() {
         >
           ▶ SIGN IN WITH GOOGLE
         </button>
+      {/* ── Disclaimer ── */}
+        <div className="disclaimer">
+          <p className="disclaimer-title">⚠ Disclaimer</p>
+          <ol className="disclaimer-list">
+            <li><strong>Experimental Tool:</strong> Yeen is an AI-powered educational supplement. Questions are generated algorithmically and have not been peer-reviewed by medical faculty.</li>
+            <li><strong>Verification Required:</strong> Users are responsible for verifying accuracy against official lectures, NICE guidelines, or standard textbooks. Do not use for clinical decision-making.</li>
+            <li><strong>Syllabus Alignment:</strong> Yeen follows general medical syllabi but does not have access to University of Sheffield's internal slides or exam databases. Some questions may be out of scope.</li>
+            <li><strong>No Data Scraping:</strong> This tool does not store or utilise copyrighted materials from the University of Sheffield.</li>
+          </ol>
+        </div>
       </div>
 
       <style jsx>{`
@@ -71,6 +81,36 @@ export default function LoginPage() {
           position: relative;
           overflow: hidden;
           background-color: var(--pink-light);
+        }
+        .disclaimer {
+          margin-top: 20px;
+          padding: 12px 14px;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.55);
+          border: 1px solid rgba(200, 160, 180, 0.35);
+          text-align: left;
+        }
+        .disclaimer-title {
+          font-family: var(--font-body);
+          font-size: 10px;
+          font-weight: 700;
+          color: #c0607a;
+          margin: 0 0 8px;
+          letter-spacing: 0.05em;
+        }
+        .disclaimer-list {
+          margin: 0;
+          padding-left: 16px;
+          font-family: var(--font-body);
+          font-size: 9.5px;
+          color: #777;
+          line-height: 1.6;
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        }
+        .disclaimer-list strong {
+          color: #555;
         }
         .poster-grid {
           position: absolute;
