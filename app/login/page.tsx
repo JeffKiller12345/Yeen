@@ -12,7 +12,6 @@ const POSTERS = [
   '/images/poster7.JPG',
   '/images/poster8.JPG',
   '/images/poster9.JPG',
-  '/images/poster10.JPG',
 ]
 
 export default function LoginPage() {
