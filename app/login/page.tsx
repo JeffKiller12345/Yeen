@@ -14,13 +14,15 @@ const POSTERS = [
   '/images/poster9.JPG',
 ]
 
+const POSTER_TILES = [...POSTERS, ...POSTERS].slice(0, 12)
+
 export default function LoginPage() {
   return (
     <div className="login-root">
 
       {/* ── Poster collage background ── */}
       <div className="poster-grid" aria-hidden="true">
-        {POSTERS.map((src, i) => (
+        {POSTER_TILES.map((src, i) => (
           <div
             key={i}
             className="poster-tile"
@@ -68,16 +70,23 @@ export default function LoginPage() {
         }
 
         /* ── Poster grid ── */
-        .poster-grid {
+.poster-grid {
   position: absolute;
   inset: -40px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);   /* ← 4 cols fits portrait better on laptop */
-  grid-auto-rows: auto;                     /* ← rows size to the tile content */
-  align-content: start;
+  grid-template-columns: repeat(4, 1fr);  /* 4 cols on desktop */
+  grid-template-rows: repeat(3, 1fr);     /* ← force 3 rows to fill height */
   gap: 12px;
   padding: 12px;
   z-index: 0;
+}
+
+/* Add this media query */
+@media (max-width: 600px) {
+  .poster-grid {
+    grid-template-columns: repeat(2, 1fr);  /* 2 cols on mobile */
+    grid-template-rows: repeat(5, 1fr);     /* more rows to fill the taller viewport */
+  }
 }
 
         .poster-tile {
