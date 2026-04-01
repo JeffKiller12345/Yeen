@@ -3,16 +3,16 @@ import { signIn } from 'next-auth/react'
 
 // 🎨 Add your poster image URLs here
 const POSTERS = [
-  '/posters/poster1.jpg',
-  '/posters/poster2.jpg',
-  '/posters/poster3.jpg',
-  '/posters/poster4.jpg',
-  '/posters/poster5.jpg',
-  '/posters/poster6.jpg',
-  '/posters/poster7.jpg',
-  '/posters/poster8.jpg',
-  '/posters/poster9.jpg',
-  '/posters/poster10.jpg',
+  '/images/poster1.jpg',
+  '/images/poster2.jpg',
+  '/images/poster3.jpg',
+  '/images/poster4.jpg',
+  '/images/poster5.jpg',
+  '/images/poster6.jpg',
+  '/images/poster7.jpg',
+  '/images/poster8.jpg',
+  '/images/poster9.jpg',
+  '/images/poster10.jpg',
 ]
 
 export default function LoginPage() {
