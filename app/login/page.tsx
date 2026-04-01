@@ -14,7 +14,7 @@ const POSTERS = [
   '/images/poster9.JPG',
 ]
 
-const POSTER_TILES = [...POSTERS, ...POSTERS].slice(0, 12)
+const POSTER_TILES = Array.from({ length: 18 }, (_, i) => POSTERS[i % POSTERS.length])
 
 export default function LoginPage() {
   return (
@@ -72,20 +72,21 @@ export default function LoginPage() {
         /* ── Poster grid ── */
 .poster-grid {
   position: absolute;
-  inset: -40px;
+  inset: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);  /* 4 cols on desktop */
-  grid-template-rows: repeat(3, 1fr);     /* ← force 3 rows to fill height */
-  gap: 12px;
-  padding: 12px;
+  grid-template-columns: repeat(3, 1fr);  /* 3 cols on mobile fits better */
+  grid-auto-rows: auto;                    /* ← let aspect-ratio control height */
+  align-content: start;
+  gap: 6px;
+  padding: 6px;
   z-index: 0;
 }
 
-/* Add this media query */
-@media (max-width: 600px) {
+@media (min-width: 600px) {
   .poster-grid {
-    grid-template-columns: repeat(2, 1fr);  /* 2 cols on mobile */
-    grid-template-rows: repeat(5, 1fr);     /* more rows to fill the taller viewport */
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 12px;
   }
 }
 
