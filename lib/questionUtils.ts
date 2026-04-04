@@ -24,22 +24,28 @@ export function selectQuestions(
   const seen = getSeenIds()
   const result: Question[] = []
 
+  // 1. Loop through each selected topic
   for (const [topic, subtopics] of Object.entries(selections)) {
-    // Sum the requested count across all subtopics for this topic
-    const totalCount = Object.values(subtopics).reduce((sum, count) => sum + count, 0)
-    if (totalCount === 0) continue
+    
+    // 2. Loop through each specific subtopic inside that topic
+    for (const [subtopic, count] of Object.entries(subtopics)) {
+      if (count <= 0) continue
 
-    // Pool ALL questions for the topic regardless of subtopic, then sample randomly
-    let pool = bank.filter(q => q.topic === topic)
+      // 3. Pool questions specifically for this topic AND subtopic
+      let pool = bank.filter(q => q.topic === topic && q.subtopic === subtopic)
 
-    if (seenMode === 'unseen') {
-      pool = pool.filter(q => !seen.has(q.id))
-    } else if (seenMode === 'seen') {
-      pool = pool.filter(q => seen.has(q.id))
+      // 4. Apply your seenMode filters
+      if (seenMode === 'unseen') {
+        pool = pool.filter(q => !seen.has(q.id))
+      } else if (seenMode === 'seen') {
+        pool = pool.filter(q => seen.has(q.id))
+      }
+
+      // 5. Randomly sample 'count' questions from this specific subtopic pool
+      result.push(...shuffle(pool).slice(0, count))
     }
-
-    result.push(...shuffle(pool).slice(0, totalCount))
   }
 
+  // 6. Give the final array one last shuffle so the subtopics are nicely mixed
   return shuffle(result)
 }
