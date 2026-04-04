@@ -125,12 +125,17 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
   }
 
   const setTopicTotal = (topic: string, total: number) => {
-    const value = Math.max(0, isNaN(total) ? 0 : total)
-    setSelections(prev => ({
-      ...prev,
-      [topic]: distributeAcrossSubtopics(topic, value)
-    }))
-  }
+  const value = Math.max(0, isNaN(total) ? 0 : total);
+  setSelections(prev => {
+    if (value === 0) {
+      const next = { ...prev };
+      delete next[topic];
+      return next;
+    }
+    // Uses the empty string '' to tell the parent to pull from the whole topic
+    return { ...prev, [topic]: { '': value } }; 
+  });
+}
 
   const getTopicTotal = (topic: string): number => {
     if (!selections[topic]) return 0
