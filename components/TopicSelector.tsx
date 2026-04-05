@@ -103,18 +103,19 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
   }
 
   const toggleTopic = (topic: string) => {
-    setExpanded(e => ({ ...e, [topic]: !e[topic] }))
-    setSelections(prev => {
-      const next = { ...prev }
-      if (next[topic]) {
-        delete next[topic]
-      } else {
-        next[topic] = {}
-        topics[topic].forEach(sub => { next[topic][sub] = 0 })
-      }
-      return next
-    })
-  }
+  const isCurrentlyExpanded = !!expanded[topic]  // capture before toggling
+  setExpanded(e => ({ ...e, [topic]: !e[topic] }))
+  setSelections(prev => {
+    const next = { ...prev }
+    if (isCurrentlyExpanded) {
+      delete next[topic]
+    } else {
+      next[topic] = {}
+      topics[topic].forEach(sub => { next[topic][sub] = 0 })
+    }
+    return next
+  })
+}
 
   const setCount = (topic: string, subtopic: string, count: number) => {
     const value = Math.max(0, isNaN(count) ? 0 : count)
@@ -125,16 +126,19 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
   }
 
   const setTopicTotal = (topic: string, total: number) => {
-  const value = Math.max(0, isNaN(total) ? 0 : total);
+  const value = Math.max(0, isNaN(total) ? 0 : total)
   setSelections(prev => {
     if (value === 0) {
-      const next = { ...prev };
-      delete next[topic];
-      return next;
+      const next = { ...prev }
+      if (next[topic]) {
+        // Reset to zeros but keep the topic so subtopics stay visible
+        next[topic] = {}
+        topics[topic].forEach(sub => { next[topic][sub] = 0 })
+      }
+      return next
     }
-    // Uses the empty string '' to tell the parent to pull from the whole topic
-    return { ...prev, [topic]: { '': value } }; 
-  });
+    return { ...prev, [topic]: { '': value } }
+  })
 }
 
   const getTopicTotal = (topic: string): number => {
