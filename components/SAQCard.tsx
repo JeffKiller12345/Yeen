@@ -25,27 +25,38 @@ export function checkAnswer(userAnswer: string, acceptable: string[]): boolean {
   return acceptable.some(a => {
     const normA = normalise(a)
     if (normUser === normA) return true
+    // Partial match for longer words to catch "The answer is [word]"
     if (normUser.includes(normA) && normA.length > 3) return true
+    // Simple pluralization check
     if (normUser === normA + 's' || normA === normUser + 's') return true
     return false
   })
 }
 
-export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, onScoreOverride, timeExpired, hideContext }: Props) {
+export default function SAQCard({ 
+  question, 
+  userAnswer, 
+  showFeedback, 
+  onAnswer, 
+  onScoreOverride, 
+  timeExpired, 
+  hideContext 
+}: Props) {
   const [localAnswer, setLocalAnswer] = useState(userAnswer)
-  // Changed to number | null to match marksAwarded
-  const [override, setOverride] = useState<number | null>(null) 
+  const [override, setOverride] = useState<number | null>(null)
 
+  // Reset state when the question changes or a new user answer is provided externally
   useEffect(() => {
     setLocalAnswer(userAnswer)
-    setOverride(null) 
+    setOverride(null)
   }, [userAnswer, question.id])
 
-  const autoAwarded = showFeedback ? checkAnswer(userAnswer, question.acceptable_answers) : false
-  
-  // Logic: Use override if present, otherwise use full marks if auto-correct, or 0 if wrong.
-  const currentScore = override !== null ? override : (autoAwarded ? question.marks : 0)
-  const isAwarded = currentScore > 0 
+  const autoMarks = showFeedback
+    ? (checkAnswer(userAnswer, question.acceptable_answers) ? question.marks : 0)
+    : 0
+
+  const effectiveMarks = override !== null ? override : autoMarks
+  const isAwarded = effectiveMarks === question.marks
   const hasSubmitted = showFeedback && (userAnswer !== '' || timeExpired)
 
   return (
@@ -98,21 +109,24 @@ export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, 
             </span>
             
             {onScoreOverride && (
-              <div className="mark-picker">
-                <span className="mark-picker-label">OVERRIDE:</span>
-                {Array.from({ length: question.marks + 1 }, (_, i) => i).map(m => (
-                  <button
-                    key={m}
-                    className={`mark-btn ${currentScore === m ? 'active' : ''}`}
-                    onClick={() => {
-                      setOverride(m)
-                      onScoreOverride(question.id, m)
-                    }}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
+              <> {/* Wrap multiple elements in a fragment */}
+                <span className="marks-result">{effectiveMarks} / {question.marks} marks</span>
+                <div className="mark-picker">
+                  <span className="mark-picker-label">OVERRIDE:</span>
+                  {Array.from({ length: question.marks + 1 }, (_, i) => i).map(m => (
+                    <button
+                      key={m}
+                      className={`mark-btn ${effectiveMarks === m ? 'active' : ''}`}
+                      onClick={() => {
+                        setOverride(m)
+                        onScoreOverride(question.id, m)
+                      }}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
@@ -127,6 +141,7 @@ export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, 
 
           {question.feedback && (
             <div className="feedback-explanation">
+              <hr style={{ margin: '10px 0', border: 'none', borderTop: '1px solid #ddd' }} />
               <p className="feedback-text">{question.feedback}</p>
             </div>
           )}
@@ -134,51 +149,37 @@ export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, 
       )}
 
       <style jsx>{`
-        /* ... keeping your existing styles ... */
-        
-        .mark-picker {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-
-        .mark-picker-label {
-          font-family: var(--font-pixel);
-          font-size: 7px;
-          margin-right: 4px;
-        }
-
+        .mark-picker { display: flex; align-items: center; gap: 4px; }
+        .mark-picker-label { font-family: var(--font-pixel); font-size: 8px; color: #999; margin-right: 2px; }
         .mark-btn {
           font-family: var(--font-pixel);
-          font-size: 8px;
-          padding: 2px 6px;
-          border: 1px solid #ccc;
+          font-size: 10px;
+          width: 24px; height: 24px;
+          border: 1.5px solid #bbb;
           background: white;
           cursor: pointer;
+          color: #666;
+          display: flex; align-items: center; justify-content: center;
         }
+        .mark-btn:hover { border-color: #888; color: #222; }
+        .mark-btn.active { background: #fce4ec; border-color: #f06292; color: #880e4f; }
 
-        .mark-btn.active {
-          background: var(--pink-mid);
-          color: white;
-          border-color: var(--pink-dark);
-        }
-
-        /* Existing styles continue below */
         .saq-card { display: flex; flex-direction: column; gap: 10px; }
-        .scenario-box { background: white; border: 3px solid var(--pink-mid); box-shadow: 4px 4px 0 var(--pink-mid); padding: 14px 16px 16px; position: relative; }
+        .scenario-box { background: white; border: 3px solid #f06292; box-shadow: 4px 4px 0 #f06292; padding: 14px 16px 16px; position: relative; }
         .stem-box { background: white; border: 2px solid #ddd; padding: 14px 16px; }
-        .marks-pill { font-family: var(--font-pixel); font-size: 7px; background: var(--pink-light); border: 1.5px solid var(--pink-mid); color: var(--pink-dark); padding: 3px 8px; }
-        .box-label { font-family: var(--font-pixel); font-size: 7px; color: var(--pink-dark); letter-spacing: 0.1em; display: block; margin-bottom: 8px; }
+        .marks-pill { font-family: var(--font-pixel); font-size: 8px; background: #fce4ec; border: 1.5px solid #f06292; color: #880e4f; padding: 3px 8px; }
+        .box-label { font-family: var(--font-pixel); font-size: 8px; color: #880e4f; letter-spacing: 0.1em; display: block; margin-bottom: 8px; }
         .answer-box { background: white; border: 2px solid #ddd; padding: 14px 16px; }
-        .answer-input { width: 100%; font-size: 13px; padding: 10px; border: 2px solid #ddd; box-sizing: border-box; }
+        .answer-input { width: 100%; font-size: 14px; padding: 10px; border: 2px solid #ddd; box-sizing: border-box; font-family: sans-serif; }
         .answer-input.correct { border-color: #66bb6a; background: #f1f8e9; }
         .answer-input.wrong { border-color: #ef9a9a; background: #fff5f5; }
-        .feedback-box { border: 2px solid; padding: 14px 16px; }
+        .feedback-box { border: 2px solid; padding: 14px 16px; margin-top: 10px; }
         .feedback-box.correct { border-color: #66bb6a; background: #f1f8e9; }
         .feedback-box.wrong { border-color: #ef9a9a; background: #fff5f5; }
-        .feedback-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .feedback-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
         .ans-grid { display: flex; flex-wrap: wrap; gap: 6px; }
-        .ans-tag { font-size: 12px; background: white; padding: 3px 10px; border: 1.5px solid #ccc; }
+        .ans-tag { font-size: 12px; background: white; padding: 3px 10px; border: 1.5px solid #ccc; border-radius: 4px; }
+        .feedback-text { font-style: italic; color: #555; font-size: 13px; }
       `}</style>
     </div>
   )
