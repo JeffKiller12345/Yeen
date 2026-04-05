@@ -11,7 +11,15 @@ export default function ResultsPage() {
   const router = useRouter()
   const init = useQuizSession((s: QuizSession) => s.init)
   const initSAQ = useQuizSession((s: QuizSession) => s.initSAQ) // Added this
-  
+  const handleScoreOverride = (questionId: string, overrideCorrect: boolean) => {
+  setResults(prev =>
+    (prev as SAQResult[]).map(r =>
+      r.question.id === questionId
+        ? { ...r, awarded: overrideCorrect }
+        : r
+    )
+  )
+}
   const [results, setResults] = useState<QuizResult[] | SAQResult[] | null>(null)
   const [quizType, setQuizType] = useState<'mcq' | 'saq'>('mcq')
   const [timeTaken, setTimeTaken] = useState(0) // Fixed destructuring
@@ -62,6 +70,7 @@ export default function ResultsPage() {
           <SAQResultsSummary
             results={results as SAQResult[]}
             timeTakenSeconds={timeTaken}
+            onScoreOverride={handleScoreOverride}
           />
         ) : (
           <ResultsSummary
