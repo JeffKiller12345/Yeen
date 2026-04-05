@@ -7,7 +7,7 @@ interface Props {
   userAnswer: string
   showFeedback: boolean
   onAnswer: (answer: string) => void
-  onScoreOverride?: (questionId: string, overrideCorrect: boolean) => void 
+  onScoreOverride?: (questionId: string, marksAwarded: number) => void
   timeExpired?: boolean
   hideContext?: boolean
 }
