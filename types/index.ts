@@ -19,6 +19,7 @@ export interface SAQResult {
   question: SAQQuestion
   userAnswer: string
   awarded: boolean
+  marksAwarded: number
   flagged: boolean
 }
 

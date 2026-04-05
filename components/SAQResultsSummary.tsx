@@ -5,13 +5,16 @@ import { useRouter } from 'next/navigation'
 interface Props {
   results: SAQResult[]
   timeTakenSeconds: number
-  onScoreOverride?: (questionId: string, overrideCorrect: boolean) => void
+  onScoreOverride?: (questionId: string, marksAwarded: number) => void
 }
 
 export default function SAQResultsSummary({ results, timeTakenSeconds, onScoreOverride }: Props) {
   const router = useRouter()
+  
   const totalMarks = results.reduce((a, r) => a + r.question.marks, 0)
-  const awardedMarks = results.filter(r => r.awarded).reduce((a, r) => a + r.question.marks, 0)
+  const awardedMarks = results.reduce((a, r) =>
+    a + (r.marksAwarded ?? (r.awarded ? r.question.marks : 0)), 0)
+  
   const pct = totalMarks > 0 ? Math.round((awardedMarks / totalMarks) * 100) : 0
   const mins = Math.floor(timeTakenSeconds / 60)
   const secs = timeTakenSeconds % 60
@@ -21,11 +24,14 @@ export default function SAQResultsSummary({ results, timeTakenSeconds, onScoreOv
     pct >= 50 ? { label: 'KEEP GOING ♡', color: '#e65100', bg: '#fff3e0' } :
     { label: 'NEEDS REVIEW ✿', color: '#c62828', bg: '#ffebee' }
 
+  // FIX: Correctly incrementing the total marks and preventing double-counting
   const byTopic = results.reduce<Record<string, { awarded: number; total: number }>>((acc, r) => {
     const t = r.question.topic
     if (!acc[t]) acc[t] = { awarded: 0, total: 0 }
-    acc[t].total += r.question.marks
-    if (r.awarded) acc[t].awarded += r.question.marks
+    
+    acc[t].awarded += r.marksAwarded ?? (r.awarded ? r.question.marks : 0)
+    acc[t].total += r.question.marks 
+    
     return acc
   }, {})
 
@@ -50,7 +56,8 @@ export default function SAQResultsSummary({ results, timeTakenSeconds, onScoreOv
         <p className="pixel-label">✦ PERFORMANCE BY SYSTEM ✦</p>
         <div className="breakdown-list">
           {Object.entries(byTopic).map(([topic, { awarded, total }]) => {
-            const topicPct = Math.round((awarded / total) * 100)
+            // FIX: Prevent NaN if total is 0
+            const topicPct = total > 0 ? Math.round((awarded / total) * 100) : 0
             return (
               <div key={topic} className="breakdown-row">
                 <span className="breakdown-topic">{topic}</span>
@@ -83,15 +90,21 @@ export default function SAQResultsSummary({ results, timeTakenSeconds, onScoreOv
                 <p className="review-q">{r.question.question}</p>
                 <div className="marks-override-row">
                   <span className="review-marks-pill">
-                    {r.awarded ? r.question.marks : 0} / {r.question.marks} pts
+                    {r.marksAwarded ?? (r.awarded ? r.question.marks : 0)} / {r.question.marks} pts
                   </span>
                   {onScoreOverride && (
-                    <button
-                      className={`override-btn ${r.awarded ? 'override-wrong' : 'override-correct'}`}
-                      onClick={() => onScoreOverride(r.question.id, !r.awarded)}
-                    >
-                      {r.awarded ? '✗ Mark wrong' : '✓ Mark correct'}
-                    </button>
+                    <div className="mark-picker">
+  <span className="mark-picker-label">OVERRIDE:</span>
+  {Array.from({ length: r.question.marks + 1 }, (_, i) => i).map(m => (
+    <button
+      key={m}
+      className={`mark-btn ${(r.marksAwarded ?? (r.awarded ? r.question.marks : 0)) === m ? 'active' : ''}`}
+      onClick={() => onScoreOverride(r.question.id, m)}
+    >
+      {m}
+    </button>
+  ))}
+</div>
                   )}
                 </div>
               </div>
@@ -151,24 +164,24 @@ export default function SAQResultsSummary({ results, timeTakenSeconds, onScoreOv
         .marks-override-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .review-marks-pill { font-size: 9px; background: #f5f5f5; padding: 2px 8px; border-radius: 4px; color: #666; }
 
-        .override-btn {
-          font-family: var(--font-pixel);
-          font-size: 7px;
-          padding: 3px 8px;
-          border: 1.5px solid #bbb;
-          background: white;
-          cursor: pointer;
-          letter-spacing: 0.05em;
-          color: #666;
-        }
-        .override-btn:hover { border-color: #888; color: #222; }
-        .override-btn.override-correct:hover { border-color: #66bb6a; color: #2e7d32; }
-        .override-btn.override-wrong:hover { border-color: #ef9a9a; color: #c62828; }
-
         .answer-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px dashed #eee; padding-top: 12px; }
         .mini-label { display: block; font-family: var(--font-pixel); font-size: 6px; color: #999; margin-bottom: 6px; }
         .user-ans-box p { font-size: 13px; color: #555; margin: 0; }
         .user-ans-box p.empty { font-style: italic; color: #bbb; }
+
+        .mark-picker { display: flex; align-items: center; gap: 4px; }
+.mark-picker-label { font-family: var(--font-pixel); font-size: 6px; color: #999; margin-right: 2px; }
+.mark-btn {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  width: 22px; height: 22px;
+  border: 1.5px solid #bbb;
+  background: white;
+  cursor: pointer;
+  color: #666;
+}
+.mark-btn:hover { border-color: #888; color: #222; }
+.mark-btn.active { background: var(--pink-light); border-color: var(--pink-mid); color: var(--pink-dark); }
 
         .ans-chips { display: flex; flex-wrap: wrap; gap: 4px; }
         .ans-chip { background: #e8f5e9; color: #2e7d32; font-size: 11px; padding: 2px 8px; border: 1px solid #c8e6c9; border-radius: 2px; }
