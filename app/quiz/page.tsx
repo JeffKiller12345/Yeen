@@ -23,7 +23,7 @@ export default function QuizPage() {
   const [startTime] = useState(Date.now())
   const [timerKey, setTimerKey] = useState(0)
   const [timesUp, setTimesUp] = useState(false)
-
+  const [scoreOverrides, setScoreOverrides] = useState<Record<string, number>>({})
   const isSAQ = questionType === 'saq'
 
   const getCaseId = (id: string) => id.replace(/_Q\d+$/, '')
@@ -66,12 +66,17 @@ export default function QuizPage() {
     finish()
 
     if (isSAQ) {
-      const results: SAQResult[] = saqQuestions.map(question => ({
-        question,
-        userAnswer: answers[question.id] ?? '',
-        awarded: checkAnswer(answers[question.id] ?? '', question.acceptable_answers),
-        flagged: flagged.has(question.id),
-      }))
+      const results: SAQResult[] = saqQuestions.map(question => {
+  const autoAwarded = checkAnswer(answers[question.id] ?? '', question.acceptable_answers)
+  const marksAwarded = scoreOverrides[question.id] ?? (autoAwarded ? question.marks : 0)
+  return {
+    question,
+    userAnswer: answers[question.id] ?? '',
+    awarded: marksAwarded > 0,
+    marksAwarded,                    // ← persist the actual value
+    flagged: flagged.has(question.id),
+  }
+})
       sessionStorage.setItem('quizResults', JSON.stringify(results))
       sessionStorage.setItem('quizType', 'saq')
     } else {
@@ -149,6 +154,9 @@ export default function QuizPage() {
                   userAnswer={answers[subQ.id] ?? ''}
                   showFeedback={feedbackMode === 'immediate'}
                   onAnswer={val => answer(subQ.id, val)}
+                  onScoreOverride={(id, marks) =>
+    setScoreOverrides(prev => ({ ...prev, [id]: marks }))
+  }
                   timeExpired={timerMode === 'total' && totalTimeSeconds === 0}
                   hideContext
                 />
@@ -173,8 +181,9 @@ export default function QuizPage() {
           <button
             className="btn-kawaii"
             onClick={handleNext}
-            disabled={!chosen && isExam}
-            style={{ background: isLast ? 'var(--green-pale)' : undefined }}
+            style={{ background: isLast ? 'var(--green-pale)' : undefined,
+                    opacity: !chosen ? 0.7 : 1
+            }}
           >
             {isLast ? '★ FINISH' : 'NEXT ▶'}
           </button>
