@@ -11,11 +11,11 @@ export default function ResultsPage() {
   const router = useRouter()
   const init = useQuizSession((s: QuizSession) => s.init)
   const initSAQ = useQuizSession((s: QuizSession) => s.initSAQ) // Added this
-  const handleScoreOverride = (questionId: string, overrideCorrect: boolean) => {
+  const handleScoreOverride = (questionId: string, marksAwarded: number) => {
   setResults(prev =>
     (prev as SAQResult[]).map(r =>
       r.question.id === questionId
-        ? { ...r, awarded: overrideCorrect }
+        ? { ...r, marksAwarded, awarded: marksAwarded > 0 }
         : r
     )
   )
