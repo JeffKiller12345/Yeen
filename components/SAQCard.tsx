@@ -150,9 +150,9 @@ export default function SAQCard({
 
       <style jsx>{`
         .mark-picker { display: flex; align-items: center; gap: 4px; }
-        .mark-picker-label { font-family: var(--font-pixel); font-size: 8px; color: #999; margin-right: 2px; }
+        .mark-picker-label { font-family: var(--font-body); font-size: 8px; color: #999; margin-right: 2px; }
         .mark-btn {
-          font-family: var(--font-pixel);
+          font-family: var(--font-body);
           font-size: 10px;
           width: 24px; height: 24px;
           border: 1.5px solid #bbb;
