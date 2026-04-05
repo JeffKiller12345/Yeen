@@ -93,12 +93,18 @@ export default function SAQResultsSummary({ results, timeTakenSeconds, onScoreOv
                     {r.marksAwarded ?? (r.awarded ? r.question.marks : 0)} / {r.question.marks} pts
                   </span>
                   {onScoreOverride && (
-                    <button
-                      className={`override-btn ${r.awarded ? 'override-wrong' : 'override-correct'}`}
-                      onClick={() => onScoreOverride(r.question.id, !r.awarded)}
-                    >
-                      {r.awarded ? '✗ Mark wrong' : '✓ Mark correct'}
-                    </button>
+                    <div className="mark-picker">
+  <span className="mark-picker-label">OVERRIDE:</span>
+  {Array.from({ length: r.question.marks + 1 }, (_, i) => i).map(m => (
+    <button
+      key={m}
+      className={`mark-btn ${(r.marksAwarded ?? (r.awarded ? r.question.marks : 0)) === m ? 'active' : ''}`}
+      onClick={() => onScoreOverride(r.question.id, m)}
+    >
+      {m}
+    </button>
+  ))}
+</div>
                   )}
                 </div>
               </div>
@@ -158,24 +164,24 @@ export default function SAQResultsSummary({ results, timeTakenSeconds, onScoreOv
         .marks-override-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .review-marks-pill { font-size: 9px; background: #f5f5f5; padding: 2px 8px; border-radius: 4px; color: #666; }
 
-        .override-btn {
-          font-family: var(--font-pixel);
-          font-size: 7px;
-          padding: 3px 8px;
-          border: 1.5px solid #bbb;
-          background: white;
-          cursor: pointer;
-          letter-spacing: 0.05em;
-          color: #666;
-        }
-        .override-btn:hover { border-color: #888; color: #222; }
-        .override-btn.override-correct:hover { border-color: #66bb6a; color: #2e7d32; }
-        .override-btn.override-wrong:hover { border-color: #ef9a9a; color: #c62828; }
-
         .answer-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px dashed #eee; padding-top: 12px; }
         .mini-label { display: block; font-family: var(--font-pixel); font-size: 6px; color: #999; margin-bottom: 6px; }
         .user-ans-box p { font-size: 13px; color: #555; margin: 0; }
         .user-ans-box p.empty { font-style: italic; color: #bbb; }
+
+        .mark-picker { display: flex; align-items: center; gap: 4px; }
+.mark-picker-label { font-family: var(--font-pixel); font-size: 6px; color: #999; margin-right: 2px; }
+.mark-btn {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  width: 22px; height: 22px;
+  border: 1.5px solid #bbb;
+  background: white;
+  cursor: pointer;
+  color: #666;
+}
+.mark-btn:hover { border-color: #888; color: #222; }
+.mark-btn.active { background: var(--pink-light); border-color: var(--pink-mid); color: var(--pink-dark); }
 
         .ans-chips { display: flex; flex-wrap: wrap; gap: 4px; }
         .ans-chip { background: #e8f5e9; color: #2e7d32; font-size: 11px; padding: 2px 8px; border: 1px solid #c8e6c9; border-radius: 2px; }
