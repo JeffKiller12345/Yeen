@@ -7,6 +7,7 @@ interface Props {
   userAnswer: string
   showFeedback: boolean
   onAnswer: (answer: string) => void
+  onScoreOverride?: (questionId: string, overrideCorrect: boolean) => void 
   timeExpired?: boolean
   hideContext?: boolean
 }
@@ -30,15 +31,25 @@ export function checkAnswer(userAnswer: string, acceptable: string[]): boolean {
   })
 }
 
-export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, timeExpired, hideContext }: Props) {
+export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, onScoreOverride, timeExpired, hideContext }: Props) {
   const [localAnswer, setLocalAnswer] = useState(userAnswer)
+  const [override, setOverride] = useState<boolean | null>(null) // NEW
 
   useEffect(() => {
     setLocalAnswer(userAnswer)
+    setOverride(null) // reset override when question changes
   }, [userAnswer, question.id])
 
-  const isAwarded = showFeedback ? checkAnswer(userAnswer, question.acceptable_answers) : false
+  const autoAwarded = showFeedback ? checkAnswer(userAnswer, question.acceptable_answers) : false
+  const isAwarded = override !== null ? override : autoAwarded // NEW — override wins
   const hasSubmitted = showFeedback && (userAnswer !== '' || timeExpired)
+
+  // NEW — toggle handler
+  function handleOverride() {
+    const next = !isAwarded
+    setOverride(next)
+    onScoreOverride?.(question.id, next)
+  }
 
   return (
     <div className="saq-card">
@@ -89,9 +100,15 @@ export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, 
             <span className="pixel-label" style={{ fontSize: '7px' }}>
               {isAwarded ? '★ CORRECT' : '✗ REVIEW REQUIRED'}
             </span>
-            <span className="marks-result">
-              {isAwarded ? question.marks : 0} / {question.marks} marks
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {/* NEW override button */}
+              <button className="override-btn" onClick={handleOverride}>
+                {isAwarded ? '✗ Mark wrong' : '✓ Mark correct'}
+              </button>
+              <span className="marks-result">
+                {isAwarded ? question.marks : 0} / {question.marks} marks
+              </span>
+            </div>
           </div>
 
           <div className="acceptable-answers">
@@ -270,6 +287,22 @@ export default function SAQCard({ question, userAnswer, showFeedback, onAnswer, 
           margin-top: 12px;
           padding-top: 12px;
           border-top: 1px dashed rgba(0,0,0,0.15);
+        }
+
+        .override-btn {
+          font-family: var(--font-pixel);
+          font-size: 7px;
+          padding: 3px 8px;
+          border: 1.5px solid #aaa;
+          background: white;
+          color: #555;
+          cursor: pointer;
+          letter-spacing: 0.05em;
+        }
+        
+        .override-btn:hover {
+          border-color: #666;
+          color: #222;
         }
 
         .feedback-text {
