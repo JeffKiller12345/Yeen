@@ -163,14 +163,27 @@ export default function SAQCard({
         }
         .mark-btn:hover { border-color: #888; color: #222; }
         .mark-btn.active { background: #fce4ec; border-color: #f06292; color: #880e4f; }
-
+        .stem-text {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  color: #222;
+  margin: 0;
+}
+.context-text {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #333;
+  margin: 6px 0 0;
+}
         .saq-card { display: flex; flex-direction: column; gap: 10px; }
         .scenario-box { background: white; border: 3px solid #f06292; box-shadow: 4px 4px 0 #f06292; padding: 14px 16px 16px; position: relative; }
         .stem-box { background: white; border: 2px solid #ddd; padding: 14px 16px; }
         .marks-pill { font-family: var(--font-pixel); font-size: 8px; background: #fce4ec; border: 1.5px solid #f06292; color: #880e4f; padding: 3px 8px; }
         .box-label { font-family: var(--font-pixel); font-size: 8px; color: #880e4f; letter-spacing: 0.1em; display: block; margin-bottom: 8px; }
         .answer-box { background: white; border: 2px solid #ddd; padding: 14px 16px; }
-        .answer-input { width: 100%; font-size: 14px; padding: 10px; border: 2px solid #ddd; box-sizing: border-box; font-family: sans-serif; }
+        .answer-input { width: 100%; font-size: 14px; padding: 10px; border: 2px solid #ddd; box-sizing: border-box; font-family: var(--font-body); }
         .answer-input.correct { border-color: #66bb6a; background: #f1f8e9; }
         .answer-input.wrong { border-color: #ef9a9a; background: #fff5f5; }
         .feedback-box { border: 2px solid; padding: 14px 16px; margin-top: 10px; }
