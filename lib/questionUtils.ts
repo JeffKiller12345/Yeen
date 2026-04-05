@@ -1,7 +1,6 @@
 import type { Question } from '@/types'
 import { getSeenIds } from '@/lib/seenTracker'
 
-// Matches the SelectionConfig in types/index.ts but explicit here
 interface LocalSelectionConfig {
   selections: Record<string, Record<string, number>>
   seenMode: 'all' | 'unseen' | 'seen'
@@ -31,8 +30,10 @@ export function selectQuestions(
     for (const [subtopic, count] of Object.entries(subtopics)) {
       if (count <= 0) continue
 
-      // 3. Pool questions specifically for this topic AND subtopic
-      let pool = bank.filter(q => q.topic === topic && q.subtopic === subtopic)
+      // 3. THE FIX: If subtopic is '', just filter by topic. Otherwise, filter by both.
+      let pool = bank.filter(q => 
+        q.topic === topic && (subtopic === '' || q.subtopic === subtopic)
+      )
 
       // 4. Apply your seenMode filters
       if (seenMode === 'unseen') {
@@ -41,11 +42,11 @@ export function selectQuestions(
         pool = pool.filter(q => seen.has(q.id))
       }
 
-      // 5. Randomly sample 'count' questions from this specific subtopic pool
+      // 5. Randomly sample 'count' questions from this specific pool
       result.push(...shuffle(pool).slice(0, count))
     }
   }
 
-  // 6. Give the final array one last shuffle so the subtopics are nicely mixed
+  // 6. Give the final array one last shuffle
   return shuffle(result)
 }
