@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 interface Props {
   results: SAQResult[]
   timeTakenSeconds: number
+  onScoreOverride?: (questionId: string, overrideCorrect: boolean) => void 
 }
 
 export default function SAQResultsSummary({ results, timeTakenSeconds }: Props) {
