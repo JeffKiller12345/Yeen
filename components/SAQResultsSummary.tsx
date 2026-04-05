@@ -10,8 +10,11 @@ interface Props {
 
 export default function SAQResultsSummary({ results, timeTakenSeconds, onScoreOverride }: Props) {
   const router = useRouter()
+  
   const totalMarks = results.reduce((a, r) => a + r.question.marks, 0)
-  const awardedMarks = results.filter(r => r.awarded).reduce((a, r) => a + r.question.marks, 0)
+  const awardedMarks = results.reduce((a, r) =>
+    a + (r.marksAwarded ?? (r.awarded ? r.question.marks : 0)), 0)
+  
   const pct = totalMarks > 0 ? Math.round((awardedMarks / totalMarks) * 100) : 0
   const mins = Math.floor(timeTakenSeconds / 60)
   const secs = timeTakenSeconds % 60
@@ -21,11 +24,14 @@ export default function SAQResultsSummary({ results, timeTakenSeconds, onScoreOv
     pct >= 50 ? { label: 'KEEP GOING ♡', color: '#e65100', bg: '#fff3e0' } :
     { label: 'NEEDS REVIEW ✿', color: '#c62828', bg: '#ffebee' }
 
+  // FIX: Correctly incrementing the total marks and preventing double-counting
   const byTopic = results.reduce<Record<string, { awarded: number; total: number }>>((acc, r) => {
     const t = r.question.topic
     if (!acc[t]) acc[t] = { awarded: 0, total: 0 }
-    acc[t].total += r.question.marks
-    if (r.awarded) acc[t].awarded += r.question.marks
+    
+    acc[t].awarded += r.marksAwarded ?? (r.awarded ? r.question.marks : 0)
+    acc[t].total += r.question.marks 
+    
     return acc
   }, {})
 
@@ -50,7 +56,8 @@ export default function SAQResultsSummary({ results, timeTakenSeconds, onScoreOv
         <p className="pixel-label">✦ PERFORMANCE BY SYSTEM ✦</p>
         <div className="breakdown-list">
           {Object.entries(byTopic).map(([topic, { awarded, total }]) => {
-            const topicPct = Math.round((awarded / total) * 100)
+            // FIX: Prevent NaN if total is 0
+            const topicPct = total > 0 ? Math.round((awarded / total) * 100) : 0
             return (
               <div key={topic} className="breakdown-row">
                 <span className="breakdown-topic">{topic}</span>
@@ -83,7 +90,7 @@ export default function SAQResultsSummary({ results, timeTakenSeconds, onScoreOv
                 <p className="review-q">{r.question.question}</p>
                 <div className="marks-override-row">
                   <span className="review-marks-pill">
-                    {r.awarded ? r.question.marks : 0} / {r.question.marks} pts
+                    {r.marksAwarded ?? (r.awarded ? r.question.marks : 0)} / {r.question.marks} pts
                   </span>
                   {onScoreOverride && (
                     <button
