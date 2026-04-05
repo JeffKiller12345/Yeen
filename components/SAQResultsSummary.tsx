@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 interface Props {
   results: SAQResult[]
   timeTakenSeconds: number
-  onScoreOverride?: (questionId: string, overrideCorrect: boolean) => void 
+  onScoreOverride?: (questionId: string, overrideCorrect: boolean) => void
 }
 
-export default function SAQResultsSummary({ results, timeTakenSeconds }: Props) {
+export default function SAQResultsSummary({ results, timeTakenSeconds, onScoreOverride }: Props) {
   const router = useRouter()
   const totalMarks = results.reduce((a, r) => a + r.question.marks, 0)
   const awardedMarks = results.filter(r => r.awarded).reduce((a, r) => a + r.question.marks, 0)
@@ -31,7 +31,7 @@ export default function SAQResultsSummary({ results, timeTakenSeconds }: Props) 
 
   return (
     <div className="results-wrapper">
-      {/* 1. Score Hero Section */}
+      {/* 1. Score Hero */}
       <div className="score-hero kawaii-panel" style={{ borderColor: grade.color, boxShadow: `6px 6px 0 ${grade.color}` }}>
         <div className="score-badge" style={{ background: grade.bg, border: `2px solid ${grade.color}` }}>
           <span className="pixel-label" style={{ color: grade.color, fontSize: '10px' }}>{grade.label}</span>
@@ -81,7 +81,19 @@ export default function SAQResultsSummary({ results, timeTakenSeconds }: Props) 
               </div>
               <div className="q-text-content">
                 <p className="review-q">{r.question.question}</p>
-                <span className="review-marks-pill">{r.awarded ? r.question.marks : 0} / {r.question.marks} pts</span>
+                <div className="marks-override-row">
+                  <span className="review-marks-pill">
+                    {r.awarded ? r.question.marks : 0} / {r.question.marks} pts
+                  </span>
+                  {onScoreOverride && (
+                    <button
+                      className={`override-btn ${r.awarded ? 'override-wrong' : 'override-correct'}`}
+                      onClick={() => onScoreOverride(r.question.id, !r.awarded)}
+                    >
+                      {r.awarded ? '✗ Mark wrong' : '✓ Mark correct'}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -90,7 +102,6 @@ export default function SAQResultsSummary({ results, timeTakenSeconds }: Props) 
                 <span className="mini-label">YOUR ANSWER:</span>
                 <p className={!r.userAnswer ? 'empty' : ''}>{r.userAnswer || 'No answer provided'}</p>
               </div>
-
               <div className="correct-ans-box">
                 <span className="mini-label">ACCEPTED ANSWERS:</span>
                 <div className="ans-chips">
@@ -124,7 +135,7 @@ export default function SAQResultsSummary({ results, timeTakenSeconds }: Props) 
         .breakdown-bar-fill { height: 100%; border-right: 2px solid rgba(0,0,0,0.1); }
         .breakdown-score { width: 40px; font-family: var(--font-pixel); font-size: 8px; text-align: right; }
 
-        .review-card { padding: 16px; margin-bottom: 16px; background: white; transition: transform 0.2s; }
+        .review-card { padding: 16px; margin-bottom: 16px; background: white; transition: border-color 0.2s, box-shadow 0.2s; }
         .review-card.fail { border-color: #ef9a9a; box-shadow: 4px 4px 0 #ef9a9a; }
         .review-card.pass { border-color: #81c784; box-shadow: 4px 4px 0 #81c784; }
 
@@ -135,14 +146,30 @@ export default function SAQResultsSummary({ results, timeTakenSeconds }: Props) 
         .status-icon.correct { color: #4caf50; }
         .status-icon.incorrect { color: #f44336; }
 
-        .review-q { font-size: 14px; font-weight: 600; color: #333; margin: 0 0 4px 0; }
+        .review-q { font-size: 14px; font-weight: 600; color: #333; margin: 0 0 6px 0; }
+
+        .marks-override-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .review-marks-pill { font-size: 9px; background: #f5f5f5; padding: 2px 8px; border-radius: 4px; color: #666; }
+
+        .override-btn {
+          font-family: var(--font-pixel);
+          font-size: 7px;
+          padding: 3px 8px;
+          border: 1.5px solid #bbb;
+          background: white;
+          cursor: pointer;
+          letter-spacing: 0.05em;
+          color: #666;
+        }
+        .override-btn:hover { border-color: #888; color: #222; }
+        .override-btn.override-correct:hover { border-color: #66bb6a; color: #2e7d32; }
+        .override-btn.override-wrong:hover { border-color: #ef9a9a; color: #c62828; }
 
         .answer-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px dashed #eee; padding-top: 12px; }
         .mini-label { display: block; font-family: var(--font-pixel); font-size: 6px; color: #999; margin-bottom: 6px; }
         .user-ans-box p { font-size: 13px; color: #555; margin: 0; }
         .user-ans-box p.empty { font-style: italic; color: #bbb; }
-        
+
         .ans-chips { display: flex; flex-wrap: wrap; gap: 4px; }
         .ans-chip { background: #e8f5e9; color: #2e7d32; font-size: 11px; padding: 2px 8px; border: 1px solid #c8e6c9; border-radius: 2px; }
 
@@ -150,6 +177,7 @@ export default function SAQResultsSummary({ results, timeTakenSeconds }: Props) 
 
         @media (max-width: 600px) {
           .answer-comparison { grid-template-columns: 1fr; }
+          .marks-override-row { flex-direction: column; align-items: flex-start; }
         }
       `}</style>
     </div>
