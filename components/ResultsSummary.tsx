@@ -26,7 +26,7 @@ export default function ResultsSummary({ results, timeTakenSeconds, onReviewFlag
 
   const grade =
     pct >= 80 ? { label: 'PASS ★', color: '#2e7d32', bg: '#f1f8e9' } :
-    pct >= 60 ? { label: 'BORDERLINE', color: '#e65100', bg: '#fff3e0' } :
+    pct >= 60 ? { label: 'AMAN KUMAR', color: '#e65100', bg: '#fff3e0' } :
                 { label: 'NEEDS REVIEW', color: '#c62828', bg: '#ffebee' }
 
   const mins = Math.floor(timeTakenSeconds / 60)
