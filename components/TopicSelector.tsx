@@ -147,7 +147,7 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
         newCounts[q.topic].total++
         newCounts[q.topic].subtopics[q.subtopic].total++
         
-        if (seenIds.has(q.id)) {
+        if (seenIds.has(String(q.id))) {
           newCounts[q.topic].seen++
           newCounts[q.topic].subtopics[q.subtopic].seen++
         }
