@@ -207,7 +207,7 @@ export default function Dashboard() {
       onSeenReset={() => setSeenResetKey(k => k + 1)}
     >
       <div className="dashboard">
-        {/* Settings — now includes questionType props */}
+        {/* Settings */}
         <ModeSelector
           examMode={examMode}
           onExamModeChange={setExamMode}
@@ -220,7 +220,7 @@ export default function Dashboard() {
           onSeenReset={() => setSeenResetKey(k => k + 1)}
         />
 
-        {/* Topic selection — now includes questionType prop */}
+        {/* Topic selection */}
         <TopicSelector
           key={seenResetKey} 
           questionType={questionType}
@@ -246,19 +246,21 @@ export default function Dashboard() {
             </button>
           </div>
           <div className="action-secondary">
-  <button 
-    className="btn-kawaii" 
-    onClick={handleExport}
-    disabled={isExporting}
-    style={{ opacity: isExporting ? 0.7 : 1, cursor: isExporting ? 'not-allowed' : 'pointer' }}
-  >
-    {isExporting ? '⏳ EXPORTING...' : '⬇ EXPORT PDF'}
-  </button>
-</div>
+            {/* Updated Export Button */}
+            <button 
+              className="btn-kawaii" 
+              onClick={handleExport}
+              disabled={isExporting}
+              style={{ opacity: isExporting ? 0.7 : 1, cursor: isExporting ? 'not-allowed' : 'pointer' }}
+            >
+              {isExporting ? '⏳ EXPORTING...' : '⬇ EXPORT PDF'}
+            </button>
+          </div>
+        </div>
 
-      <MockSelector />
+        <MockSelector />
 
-  </div>
+      </div>
 
       <style jsx>{`
         .dashboard { display: flex; flex-direction: column; gap: 16px; max-width: 720px; margin: 0 auto; }
