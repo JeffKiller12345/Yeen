@@ -20,8 +20,8 @@ export default function SAQResultsSummary({ results, timeTakenSeconds, onScoreOv
   const secs = timeTakenSeconds % 60
 
   const grade =
-    pct >= 80 ? { label: 'YAY ★ EXCELLENT', color: '#2e7d32', bg: '#f1f8e9' } :
-    pct >= 50 ? { label: 'KEEP GOING ♡', color: '#e65100', bg: '#fff3e0' } :
+    pct >= 50 ? { label: 'YAY ★ EXCELLENT', color: '#2e7d32', bg: '#f1f8e9' } :
+    pct >= 40 ? { label: 'KEEP GOING ♡', color: '#e65100', bg: '#fff3e0' } :
     { label: 'NEEDS REVIEW ✿', color: '#c62828', bg: '#ffebee' }
 
   // FIX: Correctly incrementing the total marks and preventing double-counting
