@@ -171,6 +171,7 @@ export default function Dashboard() {
     <KawaiiLayout
       title="✿ YEEN ✿"
       subtitle="welcome! pick your topics and start studying ♡"
+      onSeenReset={() => setSeenResetKey(k => k + 1)}
     >
       <div className="dashboard">
         {/* Settings — now includes questionType props */}
