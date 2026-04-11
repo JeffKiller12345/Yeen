@@ -15,38 +15,31 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-export function selectQuestions(
+export async function selectQuestions(
   bank: Question[],
   config: LocalSelectionConfig
-): Question[] {
+): Promise<Question[]> {
   const { selections, seenMode } = config
-  const seen = getSeenIds()
+  const seen = await getSeenIds('mcq')  // now properly awaited
   const result: Question[] = []
 
-  // 1. Loop through each selected topic
   for (const [topic, subtopics] of Object.entries(selections)) {
-    
-    // 2. Loop through each specific subtopic inside that topic
     for (const [subtopic, count] of Object.entries(subtopics)) {
       if (count <= 0) continue
 
-      // 3. THE FIX: If subtopic is '', just filter by topic. Otherwise, filter by both.
-      let pool = bank.filter(q => 
+      let pool = bank.filter(q =>
         q.topic === topic && (subtopic === '' || q.subtopic === subtopic)
       )
 
-      // 4. Apply your seenMode filters
       if (seenMode === 'unseen') {
         pool = pool.filter(q => !seen.has(q.id))
       } else if (seenMode === 'seen') {
         pool = pool.filter(q => seen.has(q.id))
       }
 
-      // 5. Randomly sample 'count' questions from this specific pool
       result.push(...shuffle(pool).slice(0, count))
     }
   }
 
-  // 6. Give the final array one last shuffle
   return shuffle(result)
 }

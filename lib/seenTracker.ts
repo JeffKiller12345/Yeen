@@ -1,31 +1,57 @@
-const MCQ_KEY = 'medquiz_seen_ids'
-const SAQ_KEY = 'medquiz_seen_saq_ids'
+import { supabase } from '@/lib/supabase'
 
-export function getSeenIds(type: 'mcq' | 'saq' = 'mcq'): Set<string> {
-  const key = type === 'saq' ? SAQ_KEY : MCQ_KEY
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? new Set(JSON.parse(raw)) : new Set()
-  } catch { return new Set() }
+export async function getSeenIds(type: 'mcq' | 'saq' = 'mcq'): Promise<Set<string>> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return new Set()
+
+  const { data, error } = await supabase
+    .from('user_seen_questions')
+    .select('question_id')
+    .eq('user_id', user.id)
+    .eq('question_type', type)
+
+  if (error) { console.error(error); return new Set() }
+  return new Set(data.map(r => r.question_id))
 }
 
-export function markSeen(ids: string[], type: 'mcq' | 'saq' = 'mcq') {
-  const key = type === 'saq' ? SAQ_KEY : MCQ_KEY
-  const current = getSeenIds(type)
-  ids.forEach(id => current.add(id))
-  localStorage.setItem(key, JSON.stringify([...current]))
+export async function markSeen(ids: string[], type: 'mcq' | 'saq' = 'mcq') {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const rows = ids.map(id => ({
+    user_id: user.id,
+    question_id: id,
+    question_type: type,
+  }))
+
+  const { error } = await supabase
+    .from('user_seen_questions')
+    .upsert(rows, { onConflict: 'user_id,question_id,question_type' })
+
+  if (error) console.error(error)
 }
 
-export function clearSeen() {
-  localStorage.removeItem(MCQ_KEY)
-  localStorage.removeItem(SAQ_KEY)
+export async function clearSeen(type?: 'mcq' | 'saq') {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  let query = supabase
+    .from('user_seen_questions')
+    .delete()
+    .eq('user_id', user.id)
+
+  if (type) query = query.eq('question_type', type)
+
+  const { error } = await query
+  if (error) console.error(error)
 }
 
-export function filterBySeenStatus<T extends { id: string }>(
+export async function filterBySeenStatus<T extends { id: string }>(
   questions: T[],
-  mode: 'all' | 'unseen' | 'seen'
-): T[] {
+  mode: 'all' | 'unseen' | 'seen',
+  type: 'mcq' | 'saq' = 'mcq'
+): Promise<T[]> {
   if (mode === 'all') return questions
-  const seen = getSeenIds()
+  const seen = await getSeenIds(type)
   return questions.filter(q => mode === 'unseen' ? !seen.has(q.id) : seen.has(q.id))
 }

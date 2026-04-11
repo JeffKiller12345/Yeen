@@ -86,6 +86,7 @@ export default function Dashboard() {
   const [seenMode, setSeenMode]         = useState<SeenMode>('all')
   const [error, setError]               = useState('')
   const [topics, setTopics]             = useState<Record<string, string[]>>({})
+  const [seenResetKey, setSeenResetKey] = useState(0)
 
   const totalSelected = Object.values(selections)
     .flatMap(s => Object.values(s))
@@ -93,13 +94,13 @@ export default function Dashboard() {
 
   const shuffle = (arr: any[]) => [...arr].sort(() => Math.random() - 0.5)
 
-  const startCustom = () => {
+  const startCustom = async () => {
     if (questionType === 'saq') {
       // Delegate to SAQ-specific starter
       startCustomSAQ()
       return
     }
-    const selectedMcqs = selectQuestions(questions as any, { selections, seenMode })
+    const selectedMcqs = await selectQuestions(questions as any, { selections, seenMode })
     if (selectedMcqs.length === 0) { setError('No MCQ questions match.'); return }
     // Exam mode: 90 seconds per question (1.5 min) as a global countdown
     const timerOverride = examMode ? selectedMcqs.length * 90 : undefined
@@ -109,7 +110,7 @@ export default function Dashboard() {
 
     const getCaseId = (id: string) => id.replace(/_Q\d+$/, '')
 
-  const startCustomSAQ = () => {
+  const startCustomSAQ = async () => {
     const result: SAQQuestion[] = []
 
     for (const [topic, subtopics] of Object.entries(selections)) {
@@ -146,7 +147,7 @@ export default function Dashboard() {
   
   const handleExport = async () => {
     if (totalSelected === 0) { setError('Select topics before exporting.'); return }
-    const q = selectQuestions(questions as any, { selections, seenMode })
+    const q = await selectQuestions(questions as any, { selections, seenMode })
     try {
       const response = await fetch('/api/export', {
         method: 'POST',
@@ -182,10 +183,12 @@ export default function Dashboard() {
           onSeenModeChange={setSeenMode}
           questionType={questionType}
           onQuestionTypeChange={setQuestionType}
+          onSeenReset={() => setSeenResetKey(k => k + 1)}
         />
 
         {/* Topic selection — now includes questionType prop */}
         <TopicSelector
+          key={seenResetKey} 
           questionType={questionType}
           onChange={setSelections}
           onTopicsLoaded={setTopics}
