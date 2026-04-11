@@ -16,7 +16,11 @@ export async function getSeenIds(type: 'mcq' | 'saq' = 'mcq'): Promise<Set<strin
 
 export async function markSeen(ids: string[], type: 'mcq' | 'saq' = 'mcq') {
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
+  console.log('markSeen called, user:', user?.id, 'ids:', ids)  // add this temporarily
+  if (!user) {
+    console.warn('markSeen: no user logged in, skipping')
+    return
+  }
 
   const rows = ids.map(id => ({
     user_id: user.id,
