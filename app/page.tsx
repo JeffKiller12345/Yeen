@@ -100,7 +100,7 @@ export default function Dashboard() {
       startCustomSAQ()
       return
     }
-    const selectedMcqs = selectQuestions(questions as any, { selections, seenMode })
+    const selectedMcqs = await selectQuestions(questions as any, { selections, seenMode })
     if (selectedMcqs.length === 0) { setError('No MCQ questions match.'); return }
     // Exam mode: 90 seconds per question (1.5 min) as a global countdown
     const timerOverride = examMode ? selectedMcqs.length * 90 : undefined
@@ -110,7 +110,7 @@ export default function Dashboard() {
 
     const getCaseId = (id: string) => id.replace(/_Q\d+$/, '')
 
-  const startCustomSAQ = () => {
+  const startCustomSAQ = async () => {
     const result: SAQQuestion[] = []
 
     for (const [topic, subtopics] of Object.entries(selections)) {
@@ -147,7 +147,7 @@ export default function Dashboard() {
   
   const handleExport = async () => {
     if (totalSelected === 0) { setError('Select topics before exporting.'); return }
-    const q = selectQuestions(questions as any, { selections, seenMode })
+    const q = await selectQuestions(questions as any, { selections, seenMode })
     try {
       const response = await fetch('/api/export', {
         method: 'POST',
