@@ -86,6 +86,7 @@ export default function Dashboard() {
   const [seenMode, setSeenMode]         = useState<SeenMode>('all')
   const [error, setError]               = useState('')
   const [topics, setTopics]             = useState<Record<string, string[]>>({})
+  const [seenResetKey, setSeenResetKey] = useState(0)
 
   const totalSelected = Object.values(selections)
     .flatMap(s => Object.values(s))
@@ -182,10 +183,12 @@ export default function Dashboard() {
           onSeenModeChange={setSeenMode}
           questionType={questionType}
           onQuestionTypeChange={setQuestionType}
+          onSeenReset={() => setSeenResetKey(k => k + 1)}
         />
 
         {/* Topic selection — now includes questionType prop */}
         <TopicSelector
+          key={seenResetKey} 
           questionType={questionType}
           onChange={setSelections}
           onTopicsLoaded={setTopics}
