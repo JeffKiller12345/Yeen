@@ -145,7 +145,6 @@ export default function ModeSelector({
         </div>
       </div>
       
-      {/* Styles remain the same */}
       <style jsx>{`
         .mode-selector { margin-bottom: 20px; }
 
