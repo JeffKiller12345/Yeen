@@ -29,21 +29,32 @@ export default function QuizPage() {
 
   const getCaseId = (id: string) => id.replace(/_Q\d+$/, '')
 
-  const saqCases: SAQQuestion[][] = isSAQ
-    ? Object.values(
-        saqQuestions.reduce((acc, q) => {
-          const caseId = getCaseId(q.id)
-          if (!acc[caseId]) acc[caseId] = []
-          acc[caseId].push(q)
-          return acc
-        }, {} as Record<string, SAQQuestion[]>)
-      ).map(qs => qs.sort((a, b) => a.id.localeCompare(b.id)))
-    : []
+  const saqCases = useMemo(() => {
+    if (!isSAQ) return []
+    const groups = saqQuestions.reduce((acc, q) => {
+      const caseId = getCaseId(q.id)
+      if (!acc[caseId]) acc[caseId] = []
+      acc[caseId].push(q)
+      return acc
+    }, {} as Record<string, SAQQuestion[]>)
+    
+    return Object.values(groups).map(qs => qs.sort((a, b) => a.id.localeCompare(b.id)))
+  }, [saqQuestions, isSAQ])
 
   const total = isSAQ ? saqCases.length : questions.length
+  
+  // FIX 2: Move useEffect to the TOP (before any early returns)
+  useEffect(() => {
+    if (total === 0) {
+      router.replace('/')
+    }
+  }, [total, router])
+
+  // Early return is now safe because all hooks are called above it
+  if (total === 0) return null
+
   const currentCase = isSAQ ? saqCases[current] : null
   const q = isSAQ ? saqCases[current]?.[0] : questions[current]
-
   const isFlagged = q ? flagged.has(q.id) : false
   const isExam = mode === 'exam'
   const isLast = current === total - 1
@@ -52,61 +63,51 @@ export default function QuizPage() {
     ? (currentCase?.every(subQ => answers[subQ.id]) ? 'answered' : null)
     : (answers[q?.id] ?? null)
 
-  if (total === 0) return null
-
-  useEffect(() => {
-    if (total === 0) router.replace('/')
-  }, [total])
-
   const handleNext = () => {
     if (isLast) handleFinish()
     else { next(); setTimerKey(k => k + 1) }
   }
 
-  const handleFinish = async () => {  // make it async
-  finish()
+  // FIX 3: Reordered logic to prevent data loss
+  const handleFinish = async () => {
+    // 1. Calculate results FIRST while state is still active
+    if (isSAQ) {
+      const results: SAQResult[] = saqQuestions.map(question => {
+        const autoAwarded = checkAnswer(answers[question.id] ?? '', question.acceptable_answers)
+        const marksAwarded = scoreOverrides[question.id] ?? (autoAwarded ? question.marks : 0)
+        return {
+          question,
+          userAnswer: answers[question.id] ?? '',
+          awarded: marksAwarded > 0,
+          marksAwarded,
+          flagged: flagged.has(question.id),
+        }
+      })
+      sessionStorage.setItem('quizResults', JSON.stringify(results))
+      sessionStorage.setItem('quizType', 'saq')
 
-  if (isSAQ) {
-    const results: SAQResult[] = saqQuestions.map(question => {
-      const autoAwarded = checkAnswer(answers[question.id] ?? '', question.acceptable_answers)
-      const marksAwarded = scoreOverrides[question.id] ?? (autoAwarded ? question.marks : 0)
-      return {
+      const answeredIds = saqQuestions.filter(q => answers[q.id]).map(q => q.id)
+      await markSeen(answeredIds, 'saq')
+    } else {
+      const results: QuizResult[] = questions.map(question => ({
         question,
-        userAnswer: answers[question.id] ?? '',
-        awarded: marksAwarded > 0,
-        marksAwarded,
+        chosen: (answers[question.id] as AnswerOption) ?? null,
+        correct: answers[question.id] === question.correct_answer,
         flagged: flagged.has(question.id),
-      }
-    })
-    sessionStorage.setItem('quizResults', JSON.stringify(results))
-    sessionStorage.setItem('quizType', 'saq')
+      }))
+      sessionStorage.setItem('quizResults', JSON.stringify(results))
+      sessionStorage.setItem('quizType', 'mcq')
 
-    // Mark all answered SAQ questions as seen
-    const answeredIds = saqQuestions
-      .filter(q => answers[q.id])
-      .map(q => q.id)
-    await markSeen(answeredIds, 'saq')
+      const answeredIds = questions.filter(q => answers[q.id]).map(q => q.id)
+      await markSeen(answeredIds, 'mcq')
+    }
 
-  } else {
-    const results: QuizResult[] = questions.map(question => ({
-      question,
-      chosen: (answers[question.id] as AnswerOption) ?? null,
-      correct: answers[question.id] === question.correct_answer,
-      flagged: flagged.has(question.id),
-    }))
-    sessionStorage.setItem('quizResults', JSON.stringify(results))
-    sessionStorage.setItem('quizType', 'mcq')
-
-    // Mark all answered MCQ questions as seen
-    const answeredIds = questions
-      .filter(q => answers[q.id])
-      .map(q => q.id)
-    await markSeen(answeredIds, 'mcq')
+    sessionStorage.setItem('quizTimeTaken', String(Math.round((Date.now() - startTime) / 1000)))
+    
+    // 2. Clear the hook state and navigate LAST
+    finish() 
+    router.push('/results')
   }
-
-  sessionStorage.setItem('quizTimeTaken', String(Math.round((Date.now() - startTime) / 1000)))
-  router.push('/results')
-}
 
   const handleTimerExpire = () => {
     // Per-question timer: advance to next question
