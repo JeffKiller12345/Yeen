@@ -8,6 +8,7 @@ import { checkAnswer } from '@/components/SAQCard'
 import ProgressBar from '@/components/ProgressBar'
 import FlagButton from '@/components/FlagButton'
 import Timer from '@/components/Timer'
+import { markSeen } from '@/lib/seenTracker'
 import KawaiiLayout from '@/components/KawaiiLayout'
 import TotalTimer from '@/components/TotalTimer'
 import type { AnswerOption, QuizResult, SAQResult, QuizSession, SAQQuestion } from '@/types'
@@ -62,37 +63,50 @@ export default function QuizPage() {
     else { next(); setTimerKey(k => k + 1) }
   }
 
-  const handleFinish = () => {
-    finish()
+  const handleFinish = async () => {  // make it async
+  finish()
 
-    if (isSAQ) {
-      const results: SAQResult[] = saqQuestions.map(question => {
-  const autoAwarded = checkAnswer(answers[question.id] ?? '', question.acceptable_answers)
-  const marksAwarded = scoreOverrides[question.id] ?? (autoAwarded ? question.marks : 0)
-  return {
-    question,
-    userAnswer: answers[question.id] ?? '',
-    awarded: marksAwarded > 0,
-    marksAwarded,                    // ← persist the actual value
-    flagged: flagged.has(question.id),
-  }
-})
-      sessionStorage.setItem('quizResults', JSON.stringify(results))
-      sessionStorage.setItem('quizType', 'saq')
-    } else {
-      const results: QuizResult[] = questions.map(question => ({
+  if (isSAQ) {
+    const results: SAQResult[] = saqQuestions.map(question => {
+      const autoAwarded = checkAnswer(answers[question.id] ?? '', question.acceptable_answers)
+      const marksAwarded = scoreOverrides[question.id] ?? (autoAwarded ? question.marks : 0)
+      return {
         question,
-        chosen: (answers[question.id] as AnswerOption) ?? null,
-        correct: answers[question.id] === question.correct_answer,
+        userAnswer: answers[question.id] ?? '',
+        awarded: marksAwarded > 0,
+        marksAwarded,
         flagged: flagged.has(question.id),
-      }))
-      sessionStorage.setItem('quizResults', JSON.stringify(results))
-      sessionStorage.setItem('quizType', 'mcq')
-    }
+      }
+    })
+    sessionStorage.setItem('quizResults', JSON.stringify(results))
+    sessionStorage.setItem('quizType', 'saq')
 
-    sessionStorage.setItem('quizTimeTaken', String(Math.round((Date.now() - startTime) / 1000)))
-    router.push('/results')
+    // Mark all answered SAQ questions as seen
+    const answeredIds = saqQuestions
+      .filter(q => answers[q.id])
+      .map(q => q.id)
+    await markSeen(answeredIds, 'saq')
+
+  } else {
+    const results: QuizResult[] = questions.map(question => ({
+      question,
+      chosen: (answers[question.id] as AnswerOption) ?? null,
+      correct: answers[question.id] === question.correct_answer,
+      flagged: flagged.has(question.id),
+    }))
+    sessionStorage.setItem('quizResults', JSON.stringify(results))
+    sessionStorage.setItem('quizType', 'mcq')
+
+    // Mark all answered MCQ questions as seen
+    const answeredIds = questions
+      .filter(q => answers[q.id])
+      .map(q => q.id)
+    await markSeen(answeredIds, 'mcq')
   }
+
+  sessionStorage.setItem('quizTimeTaken', String(Math.round((Date.now() - startTime) / 1000)))
+  router.push('/results')
+}
 
   const handleTimerExpire = () => {
     // Per-question timer: advance to next question
