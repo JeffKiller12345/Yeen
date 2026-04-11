@@ -1,6 +1,7 @@
 'use client'
 import { ReactNode } from 'react'
 import React from 'react'
+import { clearSeen } from '@/lib/seenTracker'
 
 const POSTERS = [
   '/images/poster1.JPG',
@@ -18,9 +19,19 @@ interface Props {
   children: ReactNode
   title?: string
   subtitle?: string
+  onSeenReset?: () => void 
 }
 
-export default function KawaiiLayout({ children, title, subtitle }: Props) {
+export default function KawaiiLayout({ children, title, subtitle, onSeenReset }: Props) {
+  const [resetState, setResetState] = useState<'idle' | 'confirming' | 'done'>('idle')
+
+  const handleReset = async (type?: 'mcq' | 'saq') => {
+    await clearSeen(type)
+    onSeenReset?.()
+    setResetState('done')
+    setTimeout(() => setResetState('idle'), 2000)
+  }
+
   return (
     <div className="kawaii-root">
       {/* Dot-grid background handled by body CSS */}
@@ -54,7 +65,23 @@ export default function KawaiiLayout({ children, title, subtitle }: Props) {
           <nav className="header-nav">
             <a href="/" className="nav-link pixel-text-sm">HOME</a>
             <span className="nav-dot">★</span>
-            <a href="/" className="nav-link pixel-text-sm">RESET PROGRESS</a>
+            {resetState === 'idle' && (
+              <button className="nav-reset-btn" onClick={() => setResetState('confirming')}>
+                RESET PROGRESS
+              </button>
+            )}
+            {resetState === 'confirming' && (
+              <span className="nav-confirm-row">
+                <span className="nav-confirm-label">RESET:</span>
+                <button className="nav-confirm-btn" onClick={() => handleReset('mcq')}>MCQ</button>
+                <button className="nav-confirm-btn" onClick={() => handleReset('saq')}>SAQ</button>
+                <button className="nav-confirm-btn all" onClick={() => handleReset()}>ALL</button>
+                <button className="nav-cancel-btn" onClick={() => setResetState('idle')}>✕</button>
+              </span>
+            )}
+            {resetState === 'done' && (
+              <span className="nav-reset-done">✓ CLEARED</span>
+            )}
           </nav>
         </div>
         {/* Pixel bow decoration */}
@@ -246,6 +273,57 @@ export default function KawaiiLayout({ children, title, subtitle }: Props) {
           margin-top: 24px;
           color: var(--pink-dark);
           opacity: 0.6;
+        }
+
+
+.nav-reset-btn {
+          font-family: var(--font-pixel);
+          font-size: 7px;
+          color: var(--pink-dark);
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 0;
+          text-decoration: none;
+        }
+        .nav-reset-btn:hover { text-decoration: underline; }
+
+        .nav-confirm-row {
+          display: flex;
+          align-items: center;
+          gap: 3px;
+        }
+        .nav-confirm-label {
+          font-family: var(--font-pixel);
+          font-size: 7px;
+          color: #c62828;
+        }
+        .nav-confirm-btn {
+          font-family: var(--font-pixel);
+          font-size: 6px;
+          padding: 3px 6px;
+          background: #fce4ec;
+          border: 1.5px solid #f48fb1;
+          color: #c62828;
+          cursor: pointer;
+        }
+        .nav-confirm-btn:hover { background: #c62828; color: white; }
+        .nav-confirm-btn.all { background: #c62828; color: white; }
+        .nav-confirm-btn.all:hover { background: #7f0000; }
+        .nav-cancel-btn {
+          font-family: var(--font-pixel);
+          font-size: 6px;
+          padding: 3px 5px;
+          background: white;
+          border: 1.5px solid #aaa;
+          color: #888;
+          cursor: pointer;
+        }
+        .nav-cancel-btn:hover { background: #eee; }
+        .nav-reset-done {
+          font-family: var(--font-pixel);
+          font-size: 7px;
+          color: #2e7d32;
         }
 
         .pixel-text    { font-family: var(--font-pixel); font-size: 11px; color: var(--pink-dark); }
