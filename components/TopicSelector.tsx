@@ -1,11 +1,18 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getSeenIds } from '@/lib/seenTracker'
 import { TOPICS_ORDER, TOPIC_ORDER } from '@/data/topicsOrder'
 
 interface Selection {
+  [topic: string]: { [subtopic: string]: number }
+}
+
+interface Counts {
   [topic: string]: {
-    [subtopic: string]: number
+    total: number
+    seen: number
+    subtopics: { [subtopic: string]: { total: number; seen: number } }
   }
 }
 
@@ -15,10 +22,59 @@ interface Props {
   questionType: 'mcq' | 'saq'
 }
 
+function RingBadge({ seen, total, size = 'topic' }: {
+  seen: number; total: number; size?: 'topic' | 'subtopic'
+}) {
+  const [show, setShow] = useState(false)
+  const pct = total === 0 ? 0 : Math.round((seen / total) * 100)
+  const unseen = total - seen
+  const dim = size === 'topic' ? 36 : 28
+  const r = size === 'topic' ? 14 : 10
+  const stroke = size === 'topic' ? 4 : 3
+  const circ = 2 * Math.PI * r
+  const dash = (pct / 100) * circ
+  const color = pct === 100 ? '#4caf50' : pct > 50 ? '#66bb6a' : pct > 20 ? '#ffa726' : '#f06292'
+
+  return (
+    <div
+      style={{ position: 'relative', width: dim, height: dim, flexShrink: 0, cursor: 'pointer' }}
+      onClick={e => { e.stopPropagation(); setShow(s => !s) }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      <svg width={dim} height={dim} viewBox={`0 0 ${dim} ${dim}`}
+        style={{ transform: 'rotate(-90deg)', display: 'block' }}>
+        <circle cx={dim/2} cy={dim/2} r={r} fill="none" stroke="#f8bbd0" strokeWidth={stroke} />
+        <circle cx={dim/2} cy={dim/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+          strokeDasharray={`${dash} ${circ - dash}`} />
+      </svg>
+      <div style={{
+        position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+        justifyContent: 'center', fontFamily: 'var(--font-pixel)',
+        fontSize: size === 'topic' ? '7px' : '6px', fontWeight: 700,
+        color: '#555', pointerEvents: 'none'
+      }}>
+        {pct}%
+      </div>
+      {show && (
+        <div style={{
+          position: 'absolute', right: dim + 6, top: '50%', transform: 'translateY(-50%)',
+          background: '#333', color: 'white', fontFamily: 'var(--font-pixel)', fontSize: '7px',
+          padding: '5px 8px', zIndex: 20, whiteSpace: 'nowrap', lineHeight: 1.8, pointerEvents: 'none'
+        }}>
+          <span style={{ color: '#81c784' }}>✓ {seen} seen</span><br />
+          <span style={{ color: '#f48fb1' }}>○ {unseen} unseen</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function TopicSelector({ onChange, onTopicsLoaded, questionType }: Props) {
   const [topics, setTopics] = useState<Record<string, string[]>>({})
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [selections, setSelections] = useState<Selection>({})
+  const [counts, setCounts] = useState<Counts>({})
 
   useEffect(() => {
     const fetchTopics = async () => {
@@ -26,27 +82,23 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
 
       const { data, error } = await supabase
         .from(table)
-        .select('topic, subtopic')
+        .select('id, topic, subtopic')
 
-      if (error) {
-        console.error('Error fetching topics:', error)
-        return
-      }
+      if (error) { console.error('Error fetching topics:', error); return }
 
+      // Build topic index
       const index: Record<string, string[]> = {}
       for (const q of data ?? []) {
         if (!index[q.topic]) index[q.topic] = []
-        if (!index[q.topic].includes(q.subtopic)) {
-          index[q.topic].push(q.subtopic)
-        }
+        if (!index[q.topic].includes(q.subtopic)) index[q.topic].push(q.subtopic)
       }
 
+      // Sort topics
       const sorted: Record<string, string[]> = {}
       const orderedTopics = [
         ...TOPIC_ORDER.filter(t => index[t]),
         ...Object.keys(index).filter(t => !TOPIC_ORDER.includes(t)).sort()
       ]
-
       for (const topic of orderedTopics) {
         const predefinedOrder = TOPICS_ORDER[topic] ?? []
         sorted[topic] = [
@@ -58,27 +110,35 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
       setTopics(sorted)
       onTopicsLoaded(sorted)
       setSelections({})
+
+      // Build seen counts
+      const seenIds = await getSeenIds(questionType)
+      const newCounts: Counts = {}
+      for (const q of data ?? []) {
+        if (!newCounts[q.topic]) newCounts[q.topic] = { total: 0, seen: 0, subtopics: {} }
+        if (!newCounts[q.topic].subtopics[q.subtopic])
+          newCounts[q.topic].subtopics[q.subtopic] = { total: 0, seen: 0 }
+        newCounts[q.topic].total++
+        newCounts[q.topic].subtopics[q.subtopic].total++
+        if (seenIds.has(q.id)) {
+          newCounts[q.topic].seen++
+          newCounts[q.topic].subtopics[q.subtopic].seen++
+        }
+      }
+      setCounts(newCounts)
     }
 
     fetchTopics()
   }, [questionType, onTopicsLoaded])
 
-  useEffect(() => {
-    onChange(selections)
-  }, [selections, onChange])
+  useEffect(() => { onChange(selections) }, [selections, onChange])
 
   // ── SAQ helpers ───────────────────────────────────────────────────────────
-  // Emits { [topic]: { '': N } } — empty string is a dummy subtopic key.
-  // startCustomSAQ sums all values per topic and ignores the key itself.
 
   const setSAQCount = (topic: string, count: number) => {
     const value = Math.max(0, isNaN(count) ? 0 : count)
     setSelections(prev => {
-      if (value === 0) {
-        const next = { ...prev }
-        delete next[topic]
-        return next
-      }
+      if (value === 0) { const next = { ...prev }; delete next[topic]; return next }
       return { ...prev, [topic]: { '': value } }
     })
   }
@@ -90,56 +150,37 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
 
   // ── MCQ helpers ───────────────────────────────────────────────────────────
 
-  const distributeAcrossSubtopics = (topic: string, total: number): Record<string, number> => {
-    const subs = topics[topic]
-    if (!subs || subs.length === 0) return {}
-    const result: Record<string, number> = {}
-    subs.forEach(s => result[s] = 0)
-    for (let i = 0; i < total; i++) {
-      const sub = subs[i % subs.length]
-      result[sub]++
-    }
-    return result
-  }
-
   const toggleTopic = (topic: string) => {
-  const isCurrentlyExpanded = !!expanded[topic]  // capture before toggling
-  setExpanded(e => ({ ...e, [topic]: !e[topic] }))
-  setSelections(prev => {
-    const next = { ...prev }
-    if (isCurrentlyExpanded) {
-      delete next[topic]
-    } else {
-      next[topic] = {}
-      topics[topic].forEach(sub => { next[topic][sub] = 0 })
-    }
-    return next
-  })
-}
-
-  const setCount = (topic: string, subtopic: string, count: number) => {
-    const value = Math.max(0, isNaN(count) ? 0 : count)
-    setSelections(prev => ({
-      ...prev,
-      [topic]: { ...prev[topic], [subtopic]: value }
-    }))
-  }
-
-  const setTopicTotal = (topic: string, total: number) => {
-  const value = Math.max(0, isNaN(total) ? 0 : total)
-  setSelections(prev => {
-    if (value === 0) {
+    const isCurrentlyExpanded = !!expanded[topic]
+    setExpanded(e => ({ ...e, [topic]: !e[topic] }))
+    setSelections(prev => {
       const next = { ...prev }
-      if (next[topic]) {
-        // Reset to zeros but keep the topic so subtopics stay visible
+      if (isCurrentlyExpanded) {
+        delete next[topic]
+      } else {
         next[topic] = {}
         topics[topic].forEach(sub => { next[topic][sub] = 0 })
       }
       return next
-    }
-    return { ...prev, [topic]: { '': value } }
-  })
-}
+    })
+  }
+
+  const setCount = (topic: string, subtopic: string, count: number) => {
+    const value = Math.max(0, isNaN(count) ? 0 : count)
+    setSelections(prev => ({ ...prev, [topic]: { ...prev[topic], [subtopic]: value } }))
+  }
+
+  const setTopicTotal = (topic: string, total: number) => {
+    const value = Math.max(0, isNaN(total) ? 0 : total)
+    setSelections(prev => {
+      if (value === 0) {
+        const next = { ...prev }
+        if (next[topic]) { next[topic] = {}; topics[topic].forEach(sub => { next[topic][sub] = 0 }) }
+        return next
+      }
+      return { ...prev, [topic]: { '': value } }
+    })
+  }
 
   const getTopicTotal = (topic: string): number => {
     if (!selections[topic]) return 0
@@ -147,8 +188,7 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
   }
 
   const totalSelected = Object.values(selections)
-    .flatMap(s => Object.values(s))
-    .reduce((a, b) => a + (b || 0), 0)
+    .flatMap(s => Object.values(s)).reduce((a, b) => a + (b || 0), 0)
 
   // ── SAQ render ────────────────────────────────────────────────────────────
 
@@ -157,9 +197,7 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
       <div className="topic-selector">
         <div className="selector-header saq">
           <span className="pixel-label">SELECT TOPICS ♡</span>
-          <span className="count-badge">
-            {totalSAQCases} {totalSAQCases === 1 ? 'case' : 'cases'}
-          </span>
+          <span className="count-badge">{totalSAQCases} {totalSAQCases === 1 ? 'case' : 'cases'}</span>
         </div>
 
         {Object.keys(topics).length === 0 && (
@@ -174,15 +212,13 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
             <div key={topic} className="topic-group">
               <div className={`topic-row ${count > 0 ? 'active' : ''}`}>
                 <span className="topic-name">{topic}</span>
+                {counts[topic] && (
+                  <RingBadge seen={counts[topic].seen} total={counts[topic].total} />
+                )}
                 <div className="count-control" onClick={e => e.stopPropagation()}>
                   <button onClick={() => setSAQCount(topic, count - 1)}>−</button>
-                  <input
-                    type="number"
-                    min="0"
-                    className="count-input"
-                    value={count}
-                    onChange={e => setSAQCount(topic, parseInt(e.target.value) || 0)}
-                  />
+                  <input type="number" min="0" className="count-input" value={count}
+                    onChange={e => setSAQCount(topic, parseInt(e.target.value) || 0)} />
                   <button onClick={() => setSAQCount(topic, count + 1)}>+</button>
                 </div>
               </div>
@@ -190,7 +226,7 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
           )
         })}
 
-        <style jsx>{`
+        <style>{`
           .topic-selector { display: flex; flex-direction: column; gap: 0; margin: 16px 0; }
           .selector-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border: 2px solid var(--pink-dark); margin-bottom: 2px; }
           .selector-header.saq { background: var(--green-mid); border-color: var(--green-mid); }
@@ -211,7 +247,7 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
     )
   }
 
-  // ── MCQ render (unchanged) ────────────────────────────────────────────────
+  // ── MCQ render ────────────────────────────────────────────────────────────
 
   return (
     <div className="topic-selector">
@@ -232,19 +268,16 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
             <span className="toggle-icon" onClick={() => toggleTopic(topic)}>
               {expanded[topic] ? '▼' : '▶'}
             </span>
-            <span className="topic-name" onClick={() => toggleTopic(topic)}>
-              {topic}
-            </span>
+            <span className="topic-name" onClick={() => toggleTopic(topic)}>{topic}</span>
+            {counts[topic] && (
+              <RingBadge seen={counts[topic].seen} total={counts[topic].total} />
+            )}
             {selections[topic] && (
               <div className="topic-count-control" onClick={e => e.stopPropagation()}>
                 <span className="pixel-label" style={{ fontSize: '7px' }}>TOTAL:</span>
-                <input
-                  type="number"
-                  min="0"
-                  className="count-input"
+                <input type="number" min="0" className="count-input"
                   value={getTopicTotal(topic)}
-                  onChange={e => setTopicTotal(topic, parseInt(e.target.value) || 0)}
-                />
+                  onChange={e => setTopicTotal(topic, parseInt(e.target.value) || 0)} />
               </div>
             )}
           </div>
@@ -254,18 +287,19 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
               {topics[topic].map((subtopic: string) => (
                 <div key={subtopic} className="subtopic-row">
                   <span className="subtopic-name">{subtopic}</span>
-                  <div className="count-control">
-                    <button onClick={() => setCount(topic, subtopic,
-                      (selections[topic]?.[subtopic] ?? 0) - 1)}>−</button>
-                    <input
-                      type="number"
-                      min="0"
-                      className="count-input"
-                      value={selections[topic]?.[subtopic] ?? 0}
-                      onChange={e => setCount(topic, subtopic, parseInt(e.target.value) || 0)}
+                  {counts[topic]?.subtopics[subtopic] && (
+                    <RingBadge
+                      size="subtopic"
+                      seen={counts[topic].subtopics[subtopic].seen}
+                      total={counts[topic].subtopics[subtopic].total}
                     />
-                    <button onClick={() => setCount(topic, subtopic,
-                      (selections[topic]?.[subtopic] ?? 0) + 1)}>+</button>
+                  )}
+                  <div className="count-control">
+                    <button onClick={() => setCount(topic, subtopic, (selections[topic]?.[subtopic] ?? 0) - 1)}>−</button>
+                    <input type="number" min="0" className="count-input"
+                      value={selections[topic]?.[subtopic] ?? 0}
+                      onChange={e => setCount(topic, subtopic, parseInt(e.target.value) || 0)} />
+                    <button onClick={() => setCount(topic, subtopic, (selections[topic]?.[subtopic] ?? 0) + 1)}>+</button>
                   </div>
                 </div>
               ))}
@@ -274,7 +308,7 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
         </div>
       ))}
 
-      <style jsx>{`
+      <style>{`
         .topic-selector { display: flex; flex-direction: column; gap: 0; margin: 16px 0; }
         .selector-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--pink-mid); border: 2px solid var(--pink-dark); margin-bottom: 2px; }
         .count-badge { font-family: var(--font-pixel); font-size: 7px; color: white; }
