@@ -94,7 +94,7 @@ export default function Dashboard() {
 
   const shuffle = (arr: any[]) => [...arr].sort(() => Math.random() - 0.5)
 
-  const startCustom = () => {
+  const startCustom = async () => {
     if (questionType === 'saq') {
       // Delegate to SAQ-specific starter
       startCustomSAQ()
