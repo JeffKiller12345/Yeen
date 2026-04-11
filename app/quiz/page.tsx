@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuizSession } from '@/lib/quizSession'
 import QuizCard from '@/components/QuizCard'
