@@ -65,7 +65,7 @@ export default function LoginPage() {
           <ol className="disclaimer-list">
             <li><strong>Diversify Your Resources:</strong> Yeen is an educational supplement. Questions have been generated algorithmically and have not been peer-reviewed by medical faculty.</li>
             <li><strong>Verification Required:</strong> Users are responsible for verifying accuracy against official lectures, NICE guidelines, or standard textbooks. Do not use for clinical decision-making.</li>
-            <li><strong>Syllabus Alignment:</strong> Yeen follows general medical syllabi but does not have access to University of Sheffield's internal slides or exam databases. Some questions may be out of scope.</li>
+            <li><strong>Syllabus Alignment:</strong> Yeen does not have access to University of Sheffield's internal slides. Some questions may be out of scope.</li>
             <li><strong>No Data Scraping:</strong> This tool does not store or utilise copyrighted materials from the University of Sheffield.</li>
           </ol>
         </div>
