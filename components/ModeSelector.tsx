@@ -1,4 +1,6 @@
 'use client'
+import { useState } from 'react'
+import { clearSeen } from '@/lib/seenTracker' 
 import type { StudyFeedbackMode, SeenMode } from '@/types'
 
 interface Props {
@@ -10,14 +12,24 @@ interface Props {
   onSeenModeChange: (v: SeenMode) => void
   questionType: 'mcq' | 'saq'
   onQuestionTypeChange: (v: 'mcq' | 'saq') => void
+  onSeenReset?: () => void
 }
 
 export default function ModeSelector({
   examMode, onExamModeChange,
   feedbackMode, onFeedbackModeChange,
   seenMode, onSeenModeChange,
-  questionType, onQuestionTypeChange, // 1. Added these two here!
+  questionType, onQuestionTypeChange,
+  onSeenReset,
 }: Props) {
+  const [resetState, setResetState] = useState<'idle' | 'confirming' | 'done'>('idle')
+
+  const handleReset = async (type?: 'mcq' | 'saq') => {
+    await clearSeen(type)
+    setResetState('done')
+    onSeenReset?.()  // tell parent to refresh counts
+    setTimeout(() => setResetState('idle'), 2000)
+  }
   return (
     <div className="mode-selector kawaii-panel">
       <p className="pixel-label">⚙ QUIZ SETTINGS</p>
@@ -105,6 +117,34 @@ export default function ModeSelector({
         </div>
       </div>
 
+<div className="mode-row">
+          <div className="mode-info">
+            <span className="mode-name">Reset Progress</span>
+            <span className="mode-desc">Clear seen question history</span>
+          </div>
+
+          {resetState === 'done' && (
+            <span className="reset-done">✓ CLEARED</span>
+          )}
+
+          {resetState === 'idle' && (
+            <button className="reset-btn" onClick={() => setResetState('confirming')}>
+              RESET
+            </button>
+          )}
+
+          {resetState === 'confirming' && (
+            <div className="confirm-row">
+              <span className="confirm-label">RESET:</span>
+              <button className="confirm-btn" onClick={() => handleReset('mcq')}>MCQ</button>
+              <button className="confirm-btn" onClick={() => handleReset('saq')}>SAQ</button>
+              <button className="confirm-btn all" onClick={() => handleReset()}>ALL</button>
+              <button className="cancel-btn" onClick={() => setResetState('idle')}>✕</button>
+            </div>
+          )}
+        </div>
+      </div>
+      
       {/* Styles remain the same */}
       <style jsx>{`
         .mode-selector { margin-bottom: 20px; }
@@ -205,6 +245,58 @@ export default function ModeSelector({
         }
 
         .pill:hover:not(.active) { background: var(--pink-light); }
+
+        .reset-btn {
+          font-family: var(--font-pixel);
+          font-size: 7px;
+          padding: 6px 12px;
+          background: white;
+          border: 2px solid var(--pink-mid);
+          color: var(--pink-dark);
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+        .reset-btn:hover { background: var(--pink-light); }
+
+        .confirm-row {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .confirm-label {
+          font-family: var(--font-pixel);
+          font-size: 7px;
+          color: #c62828;
+        }
+        .confirm-btn {
+          font-family: var(--font-pixel);
+          font-size: 7px;
+          padding: 5px 8px;
+          background: #fce4ec;
+          border: 1.5px solid #f48fb1;
+          color: #c62828;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+        .confirm-btn:hover { background: #c62828; color: white; }
+        .confirm-btn.all { background: #c62828; color: white; }
+        .confirm-btn.all:hover { background: #7f0000; }
+        .cancel-btn {
+          font-family: var(--font-pixel);
+          font-size: 7px;
+          padding: 5px 7px;
+          background: white;
+          border: 1.5px solid #aaa;
+          color: #888;
+          cursor: pointer;
+        }
+        .cancel-btn:hover { background: #eee; }
+
+        .reset-done {
+          font-family: var(--font-pixel);
+          font-size: 7px;
+          color: #2e7d32;
+        }
       `}</style>
     </div>
   )
