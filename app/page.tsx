@@ -87,6 +87,7 @@ export default function Dashboard() {
   const [error, setError]               = useState('')
   const [topics, setTopics]             = useState<Record<string, string[]>>({})
   const [seenResetKey, setSeenResetKey] = useState(0)
+  const [isExporting, setIsExporting] = useState(false)
 
   const totalSelected = Object.values(selections)
     .flatMap(s => Object.values(s))
@@ -146,24 +147,56 @@ export default function Dashboard() {
   }
   
   const handleExport = async () => {
-    if (totalSelected === 0) { setError('Select topics before exporting.'); return }
-    const q = await selectQuestions(questions as any, { selections, seenMode })
+    if (totalSelected === 0) { 
+      setError('Select topics before exporting.'); 
+      return; 
+    }
+
+    // 1. Check Limits based on the mode
+    const MAX_MCQ_LIMIT = 100;
+    const MAX_SAQ_LIMIT = 20;
+    const maxLimit = questionType === 'saq' ? MAX_SAQ_LIMIT : MAX_MCQ_LIMIT;
+
+    if (totalSelected > maxLimit) {
+      setError(`Export limit exceeded. Please select a maximum of ${maxLimit} ${questionType === 'saq' ? 'cases' : 'questions'}.`);
+      return;
+    }
+
+    // 2. Clear errors and set loading state
+    setError('');
+    setIsExporting(true);
+
     try {
+      // Note: Make sure your selectQuestions logic accurately fetches SAQs 
+      // if it currently defaults to 'questions' (MCQs) instead of 'saqQuestions'.
+      const q = await selectQuestions(questions as any, { selections, seenMode });
+      
       const response = await fetch('/api/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ questions: q, questionType }),
-      })
-      if (!response.ok) throw new Error('Export failed')
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `medquiz-paper-${Date.now()}.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
+      });
+
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `medquiz-paper-${Date.now()}.pdf`;
+      document.body.appendChild(a); // Append for better browser support
+      a.click();
+      
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+      
     } catch {
-      setError('PDF export failed. Please try again.')
+      setError('PDF export failed. Please try again.');
+    } finally {
+      setIsExporting(false);
     }
   }
 
@@ -213,11 +246,15 @@ export default function Dashboard() {
             </button>
           </div>
           <div className="action-secondary">
-            <button className="btn-kawaii" onClick={handleExport}>
-              ⬇ EXPORT PDF
-            </button>
-          </div>
-      </div>
+  <button 
+    className="btn-kawaii" 
+    onClick={handleExport}
+    disabled={isExporting}
+    style={{ opacity: isExporting ? 0.7 : 1, cursor: isExporting ? 'not-allowed' : 'pointer' }}
+  >
+    {isExporting ? '⏳ EXPORTING...' : '⬇ EXPORT PDF'}
+  </button>
+</div>
 
       <MockSelector />
 
