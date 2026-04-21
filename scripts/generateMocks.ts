@@ -149,7 +149,19 @@ async function main() {
     const sbaCounts: Record<string, number> = {};
     sbaData.forEach(q => sbaCounts[q.topic] = (sbaCounts[q.topic] || 0) + 1);
     const maxSBAMocks = Math.min(...Object.keys(sbaCounts).map(t => Math.floor(sbaCounts[t] / (SBA_HIGH_YIELD.some(hy => t.includes(hy)) ? SBA_HIGH_YIELD_COUNT : SBA_DEFAULT_COUNT))));
-
+console.log('\n📊 SBA Topic Capacity:');
+const sbaCapacity = Object.keys(sbaCounts).map(t => {
+  const isHighYield = SBA_HIGH_YIELD.some(hy => t.includes(hy));
+  const required = isHighYield ? SBA_HIGH_YIELD_COUNT : SBA_DEFAULT_COUNT;
+  const capacity = Math.floor(sbaCounts[t] / required);
+  return { topic: t, questions: sbaCounts[t], required, capacity };
+});
+sbaCapacity
+  .sort((a, b) => a.capacity - b.capacity)
+  .forEach(({ topic, questions, required, capacity }) =>
+    console.log(`  ${capacity === maxSBAMocks ? '🔴' : '  '} ${topic}: ${questions}q ÷ ${required} = ${capacity} mocks`)
+  );
+console.log(`  → SBA limit: ${maxSBAMocks} mocks\n`);
     const saqCaseCounts: Record<string, number> = {};
     const seen = new Set<string>();
     saqData.forEach(q => {
@@ -159,7 +171,16 @@ async function main() {
     const hyLimits = SAQ_HIGH_YIELD.map(hy => saqCaseCounts[Object.keys(saqCaseCounts).find(t => t.includes(hy))!] || 0);
     const otherTotal = Object.keys(saqCaseCounts).filter(t => !SAQ_HIGH_YIELD.some(hy => t.includes(hy))).reduce((s, t) => s + saqCaseCounts[t], 0);
     const maxSAQMocks = Math.min(...hyLimits, Math.floor(otherTotal / SAQ_OTHER_COUNT));
+console.log('📊 SAQ Topic Capacity:');
+SAQ_HIGH_YIELD.forEach(hy => {
+  const key = Object.keys(saqCaseCounts).find(t => t.includes(hy));
+  const caseCount = key ? saqCaseCounts[key] : 0;
+  console.log(`  ${caseCount === Math.min(...hyLimits) ? '🔴' : '  '} [HY] ${hy}: ${caseCount} cases = ${caseCount} mocks`);
+});
 
+
+console.log(`  ${Math.floor(otherTotal / SAQ_OTHER_COUNT) === maxSAQMocks ? '🔴' : '  '} [Other] ${otherTotal} cases ÷ ${SAQ_OTHER_COUNT} per paper = ${Math.floor(otherTotal / SAQ_OTHER_COUNT)} mocks`);
+console.log(`  → SAQ limit: ${maxSAQMocks} mocks\n`);
     const FINAL_COUNT = Math.max(maxSBAMocks, maxSAQMocks);
     console.log(`Generating ${FINAL_COUNT} mocks...`);
 
