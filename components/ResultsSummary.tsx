@@ -31,6 +31,7 @@ export default function ResultsSummary({ results, timeTakenSeconds, onReviewFlag
 
   const mins = Math.floor(timeTakenSeconds / 60)
   const secs = timeTakenSeconds % 60
+  const wrong = results.filter(r => !r.correct)
 
   return (
     <div className="results-wrapper">
@@ -94,6 +95,29 @@ export default function ResultsSummary({ results, timeTakenSeconds, onReviewFlag
         </div>
       )}
 
+{/* Wrong answers review */}
+      {wrong.length > 0 && (
+        <div className="wrong-panel kawaii-panel">
+          <p className="pixel-label">✗ QUESTIONS TO REVIEW ({wrong.length})</p>
+          {wrong.map(r => (
+            <div key={r.question.id} className="review-item">
+              <span className="pixel-label" style={{ fontSize: '7px', color: '#aaa' }}>
+                {r.question.topic} › {r.question.subtopic}
+              </span>
+              <p className="review-q">{r.question.question}</p>
+              <p className="review-answer">
+                Your answer: <strong>{r.chosen ?? '—'}</strong> · Correct: <strong>{r.question.correct_answer}</strong>
+              </p>
+              {r.question.feedback && (
+                <div className="review-feedback">
+                  <p>{r.question.feedback}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      
       {/* Action buttons */}
       <div className="result-actions">
         <button className="btn-kawaii" onClick={() => router.push('/')}>
