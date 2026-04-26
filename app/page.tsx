@@ -73,7 +73,7 @@ export default function Dashboard() {
       const selectedIds = selectedMeta.map((q: any) => q.id)
       const { data: fullQuestions, error: fullError } = await supabase
         .from('questions')
-        .select('id, topic, subtopic, text, options')
+        .select('id, topic, subtopic, question, options, correct_answer, feedback, generated_at')
         .in('id', selectedIds)
 
       if (fullError || !fullQuestions) { setError('Failed to load question content'); return }
@@ -191,8 +191,8 @@ export default function Dashboard() {
       // Phase 2: fetch only the columns the PDF renderer actually needs,
       // and only for the selected IDs. No select('*') pulling unused fields.
       const exportColumns = questionType === 'saq'
-        ? 'id, topic, marks, question_text, acceptable_answers'
-        : 'id, topic, subtopic, text, options'
+  ? 'id, topic, subtopic, case_context, additional_context, question, marks, acceptable_answers, feedback, generated_at'
+  : 'id, topic, subtopic, question, options, correct_answer, feedback, generated_at'
 
       const { data: exportQuestions, error: exportError } = await supabase
         .from(questionType === 'saq' ? 'saq_questions' : 'questions')
