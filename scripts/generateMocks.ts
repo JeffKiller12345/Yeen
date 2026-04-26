@@ -12,7 +12,7 @@ const supabase = createClient(
 // --- CONFIGURATION ---
 const SBA_HIGH_YIELD = ['Microbiology', 'Cardiovascular Medicine', 'Gastrointestinal and Hepatic Medicine', 'Neurology'];
 const SAQ_HIGH_YIELD = ['Microbiology', 'Respiratory Medicine', 'Cardiovascular Medicine', 'Gastrointestinal and Hepatic Medicine', 'Neurology'];
-
+const SAQ_EXCLUDED_TOPICS = ['Public Health and Population Health Science'];
 const SBA_HIGH_YIELD_COUNT = 10;
 const SBA_DEFAULT_COUNT = 5;
 const SAQ_OTHER_COUNT = 7; // Number of "Other" cases to add per paper
@@ -93,9 +93,10 @@ async function generateSAQMock(allSAQs: Question[], mockNumber: number): Promise
 
   const casesByTopic: Record<string, typeof cases[string][]> = {};
   Object.values(cases).forEach(c => {
-    if (!casesByTopic[c.topic]) casesByTopic[c.topic] = [];
-    casesByTopic[c.topic].push(c);
-  });
+  if (SAQ_EXCLUDED_TOPICS.some(ex => c.topic.includes(ex))) return; // 
+  if (!casesByTopic[c.topic]) casesByTopic[c.topic] = [];
+  casesByTopic[c.topic].push(c);
+});
 
   const selectedIds: string[] = [];
   let totalMarks = 0;
@@ -165,9 +166,12 @@ console.log(`  → SBA limit: ${maxSBAMocks} mocks\n`);
     const saqCaseCounts: Record<string, number> = {};
     const seen = new Set<string>();
     saqData.forEach(q => {
-      const cid = q.id.split('_').slice(0, 2).join('_');
-      if (!seen.has(cid)) { saqCaseCounts[q.topic] = (saqCaseCounts[q.topic] || 0) + 1; seen.add(cid); }
-    });
+  const cid = q.id.split('_').slice(0, 2).join('_');
+  if (!seen.has(cid) && !SAQ_EXCLUDED_TOPICS.some(ex => q.topic.includes(ex))) { 
+    saqCaseCounts[q.topic] = (saqCaseCounts[q.topic] || 0) + 1;
+    seen.add(cid);
+  }
+});
     const hyLimits = SAQ_HIGH_YIELD.map(hy => saqCaseCounts[Object.keys(saqCaseCounts).find(t => t.includes(hy))!] || 0);
     const otherTotal = Object.keys(saqCaseCounts).filter(t => !SAQ_HIGH_YIELD.some(hy => t.includes(hy))).reduce((s, t) => s + saqCaseCounts[t], 0);
     const maxSAQMocks = Math.min(...hyLimits, Math.floor(otherTotal / SAQ_OTHER_COUNT));
