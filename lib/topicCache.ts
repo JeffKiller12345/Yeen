@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase'
 type CacheEntry = {
   data: { id: string; topic: string; subtopic: string }[]
   fetchedAt: number
