@@ -62,6 +62,7 @@ export default function Dashboard() {
         .from('questions')
         .select('id, topic, subtopic')
         .in('topic', selectedTopics)
+      .setHeader('Cache-Control', 'public, max-age=3600')
 
       if (metaError || !meta) { setError('Failed to fetch questions'); return }
 
@@ -101,6 +102,7 @@ export default function Dashboard() {
         .from('saq_questions')
         .select('id, topic, marks')
         .in('topic', selectedTopics)
+      .setHeader('Cache-Control', 'public, max-age=3600')
 
       if (metaError || !meta) { setError('Failed to fetch SAQs'); return }
 
