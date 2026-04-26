@@ -8,6 +8,7 @@ import { selectQuestions } from '@/lib/questionUtils'
 import MockSelector from '@/components/MockSelector'
 import { useQuizSession } from '@/lib/quizSession'
 import { supabase } from '@/lib/supabase'
+import { getCachedTopicMeta } from '@/lib/topicCache'
 import type { Question, QuizSession, StudyFeedbackMode, SeenMode, SAQQuestion } from '@/types'
 
 export default function Dashboard() {
