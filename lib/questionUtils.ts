@@ -26,20 +26,16 @@ export async function selectQuestions<T extends Pick<Question, 'id' | 'topic' | 
   for (const [topic, subtopics] of Object.entries(selections)) {
     for (const [subtopic, count] of Object.entries(subtopics)) {
       if (count <= 0) continue
+
       let pool = bank.filter(q =>
         q.topic === topic && (subtopic === '' || q.subtopic === subtopic)
       )
-      if (seenMode === 'unseen') {
-        pool = pool.filter(q => !seen.has(q.id))
-      } else if (seenMode === 'seen') {
-        pool = pool.filter(q => seen.has(q.id))
-      }
-      result.push(...shuffle(pool).slice(0, count))
-    }
-  }
 
-  return shuffle(result)
-}
+      if (seenMode === 'unseen') {
+        pool = pool.filter(q => !seen.has(String(q.id)))
+      } else if (seenMode === 'seen') {
+        pool = pool.filter(q => seen.has(String(q.id)))
+      }
 
       result.push(...shuffle(pool).slice(0, count))
     }
