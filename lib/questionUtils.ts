@@ -15,10 +15,10 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-export async function selectQuestions(
-  bank: Question[],
+export async function selectQuestions<T extends Pick<Question, 'id' | 'topic' | 'subtopic'>>(
+  bank: T[],
   config: LocalSelectionConfig
-): Promise<Question[]> {
+): Promise<T[]>
   const { selections, seenMode } = config
   const seen = await getSeenIds('mcq')  // now properly awaited
   const result: Question[] = []
