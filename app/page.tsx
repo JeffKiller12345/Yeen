@@ -213,7 +213,7 @@ export default function Dashboard() {
       const url  = URL.createObjectURL(blob)
       const a    = document.createElement('a')
       a.href     = url
-      a.download = `medquiz-paper-${Date.now()}.pdf`
+      a.download = `yeen-mock-${Date.now()}.pdf`
       document.body.appendChild(a)
       a.click()
 
