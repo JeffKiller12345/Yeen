@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import KawaiiLayout from '@/components/KawaiiLayout'
 import TopicSelector from '@/components/TopicSelector'
@@ -11,83 +11,21 @@ import { supabase } from '@/lib/supabase'
 import type { Question, QuizSession, StudyFeedbackMode, SeenMode, SAQQuestion } from '@/types'
 
 export default function Dashboard() {
-  const [questions, setQuestions] = useState<Question[]>([])
-
-  useEffect(() => {
-    async function fetchAllQuestions() {
-      const batchSize = 1000
-      let page = 0
-      let allQuestions: Question[] = []
-      let keepFetching = true
-
-      while (keepFetching) {
-        const { data, error } = await supabase
-          .from('questions')
-          .select('*')
-          .range(page * batchSize, (page + 1) * batchSize - 1)
-
-        if (error) { console.error('Supabase error:', error); break }
-
-        const parsed = (data ?? []).map(q => ({
-          ...q,
-          options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options
-        }))
-
-        allQuestions = [...allQuestions, ...parsed]
-        if (!data || data.length < batchSize) keepFetching = false
-        else page++
-      }
-
-      console.log('Questions loaded:', allQuestions.length)
-      setQuestions(allQuestions)
-    }
-    fetchAllQuestions()
-  }, [])
-
-  useEffect(() => {
-    async function fetchSAQs() {
-      const batchSize = 1000
-      let page = 0
-      let all: SAQQuestion[] = []
-      let keepFetching = true
-
-      while (keepFetching) {
-        const { data, error } = await supabase
-          .from('saq_questions')
-          .select('*')
-          .range(page * batchSize, (page + 1) * batchSize - 1)
-
-        if (error) { console.error(error); break }
-
-        const parsed = (data ?? []).map(q => ({
-          ...q,
-          acceptable_answers: typeof q.acceptable_answers === 'string'
-            ? JSON.parse(q.acceptable_answers)
-            : q.acceptable_answers
-        }))
-
-        all = [...all, ...parsed]
-        if (!data || data.length < batchSize) keepFetching = false
-        else page++
-      }
-      setSaqQuestions(all)
-    }
-    fetchSAQs()
-  }, [])
-
   const router = useRouter()
-  const init = useQuizSession((s: QuizSession) => s.init)
+  const init    = useQuizSession((s: QuizSession) => s.init)
   const initSAQ = useQuizSession((s: QuizSession) => s.initSAQ)
-  const [questionType, setQuestionType] = useState<'mcq' | 'saq'>('mcq')
-  const [saqQuestions, setSaqQuestions] = useState<SAQQuestion[]>([])
-  const [selections, setSelections] = useState<Record<string, Record<string, number>>>({})
-  const [examMode, setExamMode]         = useState(false)
-  const [feedbackMode, setFeedbackMode] = useState<StudyFeedbackMode>('immediate')
-  const [seenMode, setSeenMode]         = useState<SeenMode>('all')
-  const [error, setError]               = useState('')
-  const [topics, setTopics]             = useState<Record<string, string[]>>({})
-  const [seenResetKey, setSeenResetKey] = useState(0)
-  const [isExporting, setIsExporting] = useState(false)
+
+  const [questionType,  setQuestionType]  = useState<'mcq' | 'saq'>('mcq')
+  const [selections,    setSelections]    = useState<Record<string, Record<string, number>>>({})
+  const [examMode,      setExamMode]      = useState(false)
+  const [feedbackMode,  setFeedbackMode]  = useState<StudyFeedbackMode>('immediate')
+  const [seenMode,      setSeenMode]      = useState<SeenMode>('all')
+  const [error,         setError]         = useState('')
+  const [topics,        setTopics]        = useState<Record<string, string[]>>({})
+  const [seenResetKey,  setSeenResetKey]  = useState(0)
+  const [isExporting,   setIsExporting]   = useState(false)
+  // FIX 2: Declare the missing isLoading state
+  const [isLoading,     setIsLoading]     = useState(false)
 
   const totalSelected = Object.values(selections)
     .flatMap(s => Object.values(s))
@@ -95,111 +33,205 @@ export default function Dashboard() {
 
   const shuffle = (arr: any[]) => [...arr].sort(() => Math.random() - 0.5)
 
+  // FIX 5: getCaseId moved up so both SAQ functions can use it
+  const getCaseId = (id: string) => id.replace(/_Q\d+$/, '')
+
+  // ── Shared helper: get selected topic keys ─────────────────────────────────
+  const getSelectedTopics = () =>
+    Object.keys(selections).filter(t =>
+      Object.values(selections[t]).some(count => count > 0)
+    )
+
+  // ── MCQ custom quiz ────────────────────────────────────────────────────────
   const startCustom = async () => {
     if (questionType === 'saq') {
-      // Delegate to SAQ-specific starter
       startCustomSAQ()
       return
     }
-    const selectedMcqs = await selectQuestions(questions as any, { selections, seenMode })
-    if (selectedMcqs.length === 0) { setError('No MCQ questions match.'); return }
-    // Exam mode: 90 seconds per question (1.5 min) as a global countdown
-    const timerOverride = examMode ? selectedMcqs.length * 90 : undefined
-    init(selectedMcqs, examMode ? 'exam' : 'study', feedbackMode, 'mcq', timerOverride)
-    router.push('/quiz')
+
+    setError('')
+    setIsLoading(true)
+
+    try {
+      const selectedTopics = getSelectedTopics()
+
+      // Phase 1: fetch only the lightweight columns needed for selection logic.
+      // This avoids downloading large 'text' and 'options' fields for the entire
+      // topic pool when only a small subset will be picked.
+      const { data: meta, error: metaError } = await supabase
+        .from('questions')
+        .select('id, topic, subtopic')
+        .in('topic', selectedTopics)
+
+      if (metaError || !meta) { setError('Failed to fetch questions'); return }
+
+      // Run selection on lightweight metadata to get the winning IDs only.
+      const selectedMeta = await selectQuestions(meta as any, { selections, seenMode })
+      if (selectedMeta.length === 0) { setError('No MCQ questions match.'); return }
+
+      // Phase 2: fetch full content only for the selected IDs.
+      const selectedIds = selectedMeta.map((q: any) => q.id)
+      const { data: fullQuestions, error: fullError } = await supabase
+        .from('questions')
+        .select('id, topic, subtopic, text, options')
+        .in('id', selectedIds)
+
+      if (fullError || !fullQuestions) { setError('Failed to load question content'); return }
+
+      const timerOverride = examMode ? fullQuestions.length * 90 : undefined
+      init(fullQuestions as any, examMode ? 'exam' : 'study', feedbackMode, 'mcq', timerOverride)
+      router.push('/quiz')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-    const getCaseId = (id: string) => id.replace(/_Q\d+$/, '')
-
+  // ── SAQ custom quiz ────────────────────────────────────────────────────────
   const startCustomSAQ = async () => {
-    const result: SAQQuestion[] = []
+    setError('')
+    setIsLoading(true)
 
-    for (const [topic, subtopics] of Object.entries(selections)) {
-      // Sum all values — in SAQ mode this is always { '': N }, so count = N
-      const count = Object.values(subtopics).reduce((a, b) => a + b, 0)
-      if (count === 0) continue
+    try {
+      const selectedTopics = getSelectedTopics()
 
-      // Pool ALL questions for this topic regardless of subtopic
-      const pool = saqQuestions.filter(q => q.topic === topic)
+      // Phase 1: fetch only the metadata needed to build the case map and
+      // shuffle/select cases. 'marks' is included because it's tiny and needed
+      // for the timer calculation even before the full fetch.
+      const { data: meta, error: metaError } = await supabase
+        .from('saq_questions')
+        .select('id, topic, marks')
+        .in('topic', selectedTopics)
 
-      // Group into cases by shared prefix (SAQ_XXXXXX)
-      const caseMap: Record<string, SAQQuestion[]> = {}
-      for (const q of pool) {
+      if (metaError || !meta) { setError('Failed to fetch SAQs'); return }
+
+      // Build case map and select cases using lightweight metadata.
+      const caseMap: Record<string, typeof meta> = {}
+      for (const q of meta) {
         const caseId = getCaseId(q.id)
         if (!caseMap[caseId]) caseMap[caseId] = []
         caseMap[caseId].push(q)
       }
 
-      // Shuffle cases, pick N, add all sub-questions in order
-      const selectedCases = shuffle(Object.values(caseMap)).slice(0, count)
-      for (const caseQs of selectedCases) {
-        result.push(...caseQs.sort((a: SAQQuestion, b: SAQQuestion) => a.id.localeCompare(b.id)))
-      }
-    }
+      const caseCount = totalSelected
+      const selectedCases = shuffle(Object.values(caseMap)).slice(0, caseCount)
+      const selectedIds = selectedCases
+        .flat()
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map(q => q.id)
 
-    if (result.length === 0) { setError('No SAQ questions match your selection.'); return }
-    // Exam mode: 60 seconds per mark as a global countdown (matches 120 marks = 120 min spec)
-    const MIN_SAQ_EXAM_TIME_SECONDS = 1800 // 30 minutes minimum
-    const totalMarks = result.reduce((sum, q) => sum + (q.marks || 0), 0)
-    const timerOverride = examMode ? Math.max(totalMarks * 60, MIN_SAQ_EXAM_TIME_SECONDS) : undefined
-    initSAQ(result, examMode ? 'exam' : 'study', feedbackMode, timerOverride)
-    router.push('/quiz')
+      if (selectedIds.length === 0) { setError('No SAQ questions match your selection.'); return }
+
+      // Phase 2: fetch full content (including large 'acceptable_answers' JSON)
+      // only for the questions that were actually selected.
+      const { data: fullSAQs, error: fullError } = await supabase
+        .from('saq_questions')
+        .select('id, topic, marks, question_text, acceptable_answers')
+        .in('id', selectedIds)
+
+      if (fullError || !fullSAQs) { setError('Failed to load SAQ content'); return }
+
+      const result: SAQQuestion[] = fullSAQs
+        .map(q => ({
+          ...q,
+          acceptable_answers: typeof q.acceptable_answers === 'string'
+            ? JSON.parse(q.acceptable_answers)
+            : q.acceptable_answers,
+        }))
+        .sort((a, b) => a.id.localeCompare(b.id)) as SAQQuestion[]
+
+      const MIN_SAQ_EXAM_TIME_SECONDS = 1800
+      const totalMarks = result.reduce((sum, q) => sum + (q.marks || 0), 0)
+      const timerOverride = examMode
+        ? Math.max(totalMarks * 60, MIN_SAQ_EXAM_TIME_SECONDS)
+        : undefined
+
+      initSAQ(result, examMode ? 'exam' : 'study', feedbackMode, timerOverride)
+      router.push('/quiz')
+    } finally {
+      setIsLoading(false)
+    }
   }
-  
+
+  // ── PDF export ─────────────────────────────────────────────────────────────
   const handleExport = async () => {
-    if (totalSelected === 0) { 
-      setError('Select topics before exporting.'); 
-      return; 
+    if (totalSelected === 0) {
+      setError('Select topics before exporting.')
+      return
     }
 
-    // 1. Check Limits based on the mode
-    const MAX_MCQ_LIMIT = 100;
-    const MAX_SAQ_LIMIT = 20;
-    const maxLimit = questionType === 'saq' ? MAX_SAQ_LIMIT : MAX_MCQ_LIMIT;
+    const MAX_MCQ_LIMIT = 100
+    const MAX_SAQ_LIMIT = 20
+    const maxLimit = questionType === 'saq' ? MAX_SAQ_LIMIT : MAX_MCQ_LIMIT
 
     if (totalSelected > maxLimit) {
-      setError(`Export limit exceeded. Please select a maximum of ${maxLimit} ${questionType === 'saq' ? 'cases' : 'questions'}.`);
-      return;
+      setError(
+        `Export limit exceeded. Please select a maximum of ${maxLimit} ` +
+        `${questionType === 'saq' ? 'cases' : 'questions'}.`
+      )
+      return
     }
 
-    // 2. Clear errors and set loading state
-    setError('');
-    setIsExporting(true);
+    setError('')
+    setIsExporting(true)
 
     try {
-      // Note: Make sure your selectQuestions logic accurately fetches SAQs 
-      // if it currently defaults to 'questions' (MCQs) instead of 'saqQuestions'.
-      const q = await selectQuestions(questions as any, { selections, seenMode });
-      
+      const selectedTopics = getSelectedTopics()
+
+      // Phase 1: lightweight metadata fetch for selection.
+      const { data: meta, error: metaError } = await supabase
+        .from(questionType === 'saq' ? 'saq_questions' : 'questions')
+        .select('id, topic, subtopic')
+        .in('topic', selectedTopics)
+
+      if (metaError || !meta) { setError('Failed to fetch questions for export.'); return }
+
+      const selectedMeta = await selectQuestions(meta as any, { selections, seenMode })
+      const selectedIds  = selectedMeta.map((q: any) => q.id)
+
+      // Phase 2: fetch only the columns the PDF renderer actually needs,
+      // and only for the selected IDs. No select('*') pulling unused fields.
+      const exportColumns = questionType === 'saq'
+        ? 'id, topic, marks, question_text, acceptable_answers'
+        : 'id, topic, subtopic, text, options'
+
+      const { data: exportQuestions, error: exportError } = await supabase
+        .from(questionType === 'saq' ? 'saq_questions' : 'questions')
+        .select(exportColumns)
+        .in('id', selectedIds)
+
+      if (exportError || !exportQuestions) {
+        setError('Failed to load question content for export.')
+        return
+      }
+
       const response = await fetch('/api/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questions: q, questionType }),
-      });
+        body: JSON.stringify({ questions: exportQuestions, questionType }),
+      })
 
-      if (!response.ok) throw new Error('Export failed');
-      
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `medquiz-paper-${Date.now()}.pdf`;
-      document.body.appendChild(a); // Append for better browser support
-      a.click();
-      
-      // Cleanup
+      if (!response.ok) throw new Error('Export failed')
+
+      const blob = await response.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `medquiz-paper-${Date.now()}.pdf`
+      document.body.appendChild(a)
+      a.click()
+
       setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
-      
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      }, 100)
     } catch {
-      setError('PDF export failed. Please try again.');
+      setError('PDF export failed. Please try again.')
     } finally {
-      setIsExporting(false);
+      setIsExporting(false)
     }
   }
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <KawaiiLayout
       title="✿ YEEN ✿"
@@ -207,7 +239,6 @@ export default function Dashboard() {
       onSeenReset={() => setSeenResetKey(k => k + 1)}
     >
       <div className="dashboard">
-        {/* Settings */}
         <ModeSelector
           examMode={examMode}
           onExamModeChange={setExamMode}
@@ -220,9 +251,8 @@ export default function Dashboard() {
           onSeenReset={() => setSeenResetKey(k => k + 1)}
         />
 
-        {/* Topic selection */}
         <TopicSelector
-          key={seenResetKey} 
+          key={seenResetKey}
           questionType={questionType}
           onChange={setSelections}
           onTopicsLoaded={setTopics}
@@ -238,17 +268,21 @@ export default function Dashboard() {
 
         <div className="dashboard-actions">
           <div className="action-primary">
-            <button className="btn-kawaii" onClick={startCustom}>
-              ▶ START CUSTOM QUIZ
-              {totalSelected > 0 && (
+            <button
+              className="btn-kawaii"
+              onClick={startCustom}
+              disabled={isLoading}
+              style={{ opacity: isLoading ? 0.7 : 1, cursor: isLoading ? 'not-allowed' : 'pointer' }}
+            >
+              {isLoading ? '⏳ LOADING...' : '▶ START CUSTOM QUIZ'}
+              {!isLoading && totalSelected > 0 && (
                 <span className="q-count-pill">{totalSelected}q</span>
               )}
             </button>
           </div>
           <div className="action-secondary">
-            {/* Updated Export Button */}
-            <button 
-              className="btn-kawaii" 
+            <button
+              className="btn-kawaii"
               onClick={handleExport}
               disabled={isExporting}
               style={{ opacity: isExporting ? 0.7 : 1, cursor: isExporting ? 'not-allowed' : 'pointer' }}
@@ -259,7 +293,6 @@ export default function Dashboard() {
         </div>
 
         <MockSelector />
-
       </div>
 
       <style jsx>{`
