@@ -124,9 +124,9 @@ export default function Dashboard() {
       // Phase 2: fetch full content (including large 'acceptable_answers' JSON)
       // only for the questions that were actually selected.
       const { data: fullSAQs, error: fullError } = await supabase
-        .from('saq_questions')
-        .select('id, topic, marks, question_text, acceptable_answers')
-        .in('id', selectedIds)
+  .from('saq_questions')
+  .select('id, topic, subtopic, case_context, additional_context, question, marks, acceptable_answers, feedback, generated_at')
+  .in('id', selectedIds)
 
       if (fullError || !fullSAQs) { setError('Failed to load SAQ content'); return }
 
