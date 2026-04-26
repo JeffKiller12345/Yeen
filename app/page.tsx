@@ -58,16 +58,13 @@ export default function Dashboard() {
       // Phase 1: fetch only the lightweight columns needed for selection logic.
       // This avoids downloading large 'text' and 'options' fields for the entire
       // topic pool when only a small subset will be picked.
-      const { data: meta, error: metaError } = await supabase
-        .from('questions')
-        .select('id, topic, subtopic')
-        .in('topic', selectedTopics)
-      .setHeader('Cache-Control', 'public, max-age=3600')
+      const allMeta = await getCachedTopicMeta('questions')
+      const meta = allMeta.filter(q => selectedTopics.includes(q.topic))
 
-      if (metaError || !meta) { setError('Failed to fetch questions'); return }
+      if (meta.length === 0) { setError('Failed to fetch questions'); return }
 
-      // Run selection on lightweight metadata to get the winning IDs only.
       const selectedMeta = await selectQuestions(meta as any, { selections, seenMode })
+
       if (selectedMeta.length === 0) { setError('No MCQ questions match.'); return }
 
       // Phase 2: fetch full content only for the selected IDs.
@@ -98,13 +95,10 @@ export default function Dashboard() {
       // Phase 1: fetch only the metadata needed to build the case map and
       // shuffle/select cases. 'marks' is included because it's tiny and needed
       // for the timer calculation even before the full fetch.
-      const { data: meta, error: metaError } = await supabase
-        .from('saq_questions')
-        .select('id, topic, marks')
-        .in('topic', selectedTopics)
-      .setHeader('Cache-Control', 'public, max-age=3600')
+      const allMeta = await getCachedTopicMeta('saq_questions')
+      const meta = allMeta.filter(q => selectedTopics.includes(q.topic))
 
-      if (metaError || !meta) { setError('Failed to fetch SAQs'); return }
+      if (meta.length === 0) { setError('Failed to fetch SAQs'); return }
 
       // Build case map and select cases using lightweight metadata.
       const caseMap: Record<string, typeof meta> = {}
