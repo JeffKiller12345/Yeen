@@ -18,24 +18,28 @@ function shuffle<T>(arr: T[]): T[] {
 export async function selectQuestions<T extends Pick<Question, 'id' | 'topic' | 'subtopic'>>(
   bank: T[],
   config: LocalSelectionConfig
-): Promise<T[]>
+): Promise<T[]> {
   const { selections, seenMode } = config
-  const seen = await getSeenIds('mcq')  // now properly awaited
-  const result: Question[] = []
+  const seen = await getSeenIds('mcq')
+  const result: T[] = []
 
   for (const [topic, subtopics] of Object.entries(selections)) {
     for (const [subtopic, count] of Object.entries(subtopics)) {
       if (count <= 0) continue
-
       let pool = bank.filter(q =>
         q.topic === topic && (subtopic === '' || q.subtopic === subtopic)
       )
-
       if (seenMode === 'unseen') {
         pool = pool.filter(q => !seen.has(q.id))
       } else if (seenMode === 'seen') {
         pool = pool.filter(q => seen.has(q.id))
       }
+      result.push(...shuffle(pool).slice(0, count))
+    }
+  }
+
+  return shuffle(result)
+}
 
       result.push(...shuffle(pool).slice(0, count))
     }
