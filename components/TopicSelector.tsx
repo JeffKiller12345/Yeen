@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getSeenIds } from '@/lib/seenTracker'
 import { TOPICS_ORDER, TOPIC_ORDER } from '@/data/topicsOrder'
+import { getCachedTopicMeta } from '@/lib/topicCache'
 
 interface Selection {
   [topic: string]: { [subtopic: string]: number }
@@ -77,86 +78,58 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
   const [counts, setCounts] = useState<Counts>({})
 
   useEffect(() => {
-    const fetchTopics = async () => {
-      const table = questionType === 'saq' ? 'saq_questions' : 'questions'
+  const fetchTopics = async () => {
+    // getCachedTopicMeta handles all the pagination internally
+    const allData = await getCachedTopicMeta(
+      questionType === 'saq' ? 'saq_questions' : 'questions'
+    )
 
-      // 1. Setup pagination variables
-      let allData: { id: string | number; topic: string; subtopic: string }[] = []
-      let from = 0
-      const step = 1000
-      let hasMore = true
-
-      // 2. Fetch data in chunks until everything is loaded
-      while (hasMore) {
-        const { data, error } = await supabase
-          .from(table)
-          .select('id, topic, subtopic')
-          .range(from, from + step - 1)
-
-        if (error) { 
-          console.error('Error fetching topics:', error); 
-          break; 
-        }
-
-        if (data && data.length > 0) {
-          allData = [...allData, ...data]
-          if (data.length < step) {
-            hasMore = false // We've reached the end of the table
-          } else {
-            from += step // Increment to grab the next 1000
-          }
-        } else {
-          hasMore = false
-        }
-      }
-
-      // Build topic index (using allData instead of data)
-      const index: Record<string, string[]> = {}
-      for (const q of allData) {
-        if (!index[q.topic]) index[q.topic] = []
-        if (!index[q.topic].includes(q.subtopic)) index[q.topic].push(q.subtopic)
-      }
-
-      // Sort topics
-      const sorted: Record<string, string[]> = {}
-      const orderedTopics = [
-        ...TOPIC_ORDER.filter(t => index[t]),
-        ...Object.keys(index).filter(t => !TOPIC_ORDER.includes(t)).sort()
-      ]
-      
-      for (const topic of orderedTopics) {
-        const predefinedOrder = TOPICS_ORDER[topic] ?? []
-        sorted[topic] = [
-          ...predefinedOrder.filter(s => index[topic].includes(s)),
-          ...index[topic].filter(s => !predefinedOrder.includes(s)).sort()
-        ]
-      }
-
-      setTopics(sorted)
-      onTopicsLoaded(sorted)
-      setSelections({})
-
-      // Build seen counts (using allData instead of data)
-      const seenIds = await getSeenIds(questionType)
-      const newCounts: Counts = {}
-      for (const q of allData) {
-        if (!newCounts[q.topic]) newCounts[q.topic] = { total: 0, seen: 0, subtopics: {} }
-        if (!newCounts[q.topic].subtopics[q.subtopic])
-          newCounts[q.topic].subtopics[q.subtopic] = { total: 0, seen: 0 }
-        
-        newCounts[q.topic].total++
-        newCounts[q.topic].subtopics[q.subtopic].total++
-        
-        if (seenIds.has(String(q.id))) {
-          newCounts[q.topic].seen++
-          newCounts[q.topic].subtopics[q.subtopic].seen++
-        }
-      }
-      setCounts(newCounts)
+    // Build topic index
+    const index: Record<string, string[]> = {}
+    for (const q of allData) {
+      if (!index[q.topic]) index[q.topic] = []
+      if (!index[q.topic].includes(q.subtopic)) index[q.topic].push(q.subtopic)
     }
 
-    fetchTopics()
-  }, [questionType, onTopicsLoaded])
+    // Sort topics
+    const sorted: Record<string, string[]> = {}
+    const orderedTopics = [
+      ...TOPIC_ORDER.filter(t => index[t]),
+      ...Object.keys(index).filter(t => !TOPIC_ORDER.includes(t)).sort()
+    ]
+    for (const topic of orderedTopics) {
+      const predefinedOrder = TOPICS_ORDER[topic] ?? []
+      sorted[topic] = [
+        ...predefinedOrder.filter(s => index[topic].includes(s)),
+        ...index[topic].filter(s => !predefinedOrder.includes(s)).sort()
+      ]
+    }
+
+    setTopics(sorted)
+    onTopicsLoaded(sorted)
+    setSelections({})
+
+    // Build seen counts
+    const seenIds = await getSeenIds(questionType)
+    const newCounts: Counts = {}
+    for (const q of allData) {
+      if (!newCounts[q.topic]) newCounts[q.topic] = { total: 0, seen: 0, subtopics: {} }
+      if (!newCounts[q.topic].subtopics[q.subtopic])
+        newCounts[q.topic].subtopics[q.subtopic] = { total: 0, seen: 0 }
+
+      newCounts[q.topic].total++
+      newCounts[q.topic].subtopics[q.subtopic].total++
+
+      if (seenIds.has(String(q.id))) {
+        newCounts[q.topic].seen++
+        newCounts[q.topic].subtopics[q.subtopic].seen++
+      }
+    }
+    setCounts(newCounts)
+  }
+
+  fetchTopics()
+}, [questionType, onTopicsLoaded])
 
   useEffect(() => { onChange(selections) }, [selections, onChange])
 
