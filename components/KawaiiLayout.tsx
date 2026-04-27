@@ -18,6 +18,7 @@ const POSTERS = [
   '/images/poster12.JPG',
   '/images/poster13.JPG',
   '/images/poster14.JPG',
+  '/images/poster15.JPG',
 ]
 
 interface Props {
