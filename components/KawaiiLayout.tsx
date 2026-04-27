@@ -14,11 +14,11 @@ const POSTERS = [
   '/images/poster8.JPG',
   '/images/poster9.JPG',
   '/images/poster10.JPG',
-  '/images/poster11.JPG',
-  '/images/poster12.JPG',
-  '/images/poster13.JPG',
-  '/images/poster14.JPG',
-  '/images/poster15.JPG',
+  '/images/poster11.jpg',
+  '/images/poster12.jpg',
+  '/images/poster13.jpg',
+  '/images/poster14.jpg',
+  '/images/poster15.jpg',
 ]
 
 interface Props {
