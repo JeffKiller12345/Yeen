@@ -35,9 +35,9 @@ export default function KawaiiLayout({ children, title, subtitle, onSeenReset }:
   return (
     <div className="kawaii-root">
       {/* Dot-grid background handled by body CSS */}
-{/* Left poster strip */}
+// Left poster strip
 <div className="poster-strip poster-strip-left" aria-hidden="true">
-  {POSTERS.map((src, i) => (
+  {Array.from({ length: 40 }, (_, i) => POSTERS[i % POSTERS.length]).map((src, i) => (
     <div key={i} className="poster-tile" style={{ '--rotation': `${(i % 2 === 0 ? 1 : -1) * (1 + (i % 3))}deg` } as React.CSSProperties}>
       <img src={src} alt="" draggable={false} />
     </div>
@@ -45,9 +45,9 @@ export default function KawaiiLayout({ children, title, subtitle, onSeenReset }:
   <div className="strip-overlay" />
 </div>
 
-{/* Right poster strip */}
+// Right poster strip
 <div className="poster-strip poster-strip-right" aria-hidden="true">
-  {[...POSTERS].reverse().map((src, i) => (
+  {Array.from({ length: 40 }, (_, i) => POSTERS[(POSTERS.length - 1 - i) % POSTERS.length]).map((src, i) => (
     <div key={i} className="poster-tile" style={{ '--rotation': `${(i % 2 === 0 ? -1 : 1) * (1 + (i % 3))}deg` } as React.CSSProperties}>
       <img src={src} alt="" draggable={false} />
     </div>
