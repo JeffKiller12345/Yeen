@@ -12,9 +12,11 @@ export async function getCachedTopicMeta(
 ): Promise<{ id: string; topic: string; subtopic: string }[]> {
   const now = Date.now()
   if (cache[table] && now - cache[table].fetchedAt < TTL) {
+    console.log(`[topicCache] HIT for ${table}`) 
     return cache[table].data
   }
-
+console.log(`[topicCache] MISS for ${table}`)
+  
   let allData: { id: string; topic: string; subtopic: string }[] = []
   let from = 0
   const step = 1000
