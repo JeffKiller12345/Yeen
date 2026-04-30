@@ -40,11 +40,11 @@ export default function QuizCard({ question, chosen, showFeedback, onAnswer }: P
           const state = getOptionState(letter)
           return (
             <button
-              key={letter}
-              className={`option-btn option-${state}`}
-              onClick={() => !chosen && onAnswer(letter)}
-              disabled={!!chosen}
-            >
+  key={letter}
+  className={`option-btn option-${state}`}
+  onClick={() => onAnswer(letter)}
+  disabled={showFeedback && !!chosen}
+>
               <span className="option-letter">{letter}</span>
               <span className="option-text">{question.options[letter]}</span>
               {showFeedback && chosen && letter === question.correct_answer && (
