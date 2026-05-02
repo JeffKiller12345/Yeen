@@ -110,24 +110,77 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
     setSelections({})
 
     // Build seen counts
-    const seenIds = await getSeenIds(questionType)
-    const newCounts: Counts = {}
-    for (const q of allData) {
-      if (!newCounts[q.topic]) newCounts[q.topic] = { total: 0, seen: 0, subtopics: {} }
-      if (!newCounts[q.topic].subtopics[q.subtopic])
-        newCounts[q.topic].subtopics[q.subtopic] = { total: 0, seen: 0 }
+const seenIds = await getSeenIds(questionType)
+const newCounts: Counts = {}
 
-      newCounts[q.topic].total++
-      newCounts[q.topic].subtopics[q.subtopic].total++
-
-      if (seenIds.has(String(q.id))) {
-        newCounts[q.topic].seen++
-        newCounts[q.topic].subtopics[q.subtopic].seen++
-      }
-    }
-    setCounts(newCounts)
+if (questionType === 'saq') {
+  // For SAQ: count unique *cases*, not individual questions.
+  // ID format: SAQ_<CASEID>_Q<n>  →  extract the middle segment.
+  const extractCaseId = (id: string): string => {
+    const match = String(id).match(/^SAQ_([^_]+)_/)
+    return match ? match[1] : String(id)          // fallback: whole id
   }
 
+  // Sets of unique case IDs (and seen case IDs) per topic / subtopic
+  const topicCases:        Record<string, Set<string>> = {}
+  const topicSeenCases:    Record<string, Set<string>> = {}
+  const subCases:  Record<string, Record<string, Set<string>>> = {}
+  const subSeen:   Record<string, Record<string, Set<string>>> = {}
+
+  for (const q of allData) {
+    const caseId = extractCaseId(q.id)
+    const { topic, subtopic } = q
+
+    if (!topicCases[topic])     topicCases[topic]     = new Set()
+    if (!topicSeenCases[topic]) topicSeenCases[topic] = new Set()
+    if (!subCases[topic])       subCases[topic]       = {}
+    if (!subCases[topic][subtopic])  subCases[topic][subtopic]  = new Set()
+    if (!subSeen[topic])        subSeen[topic]        = {}
+    if (!subSeen[topic][subtopic])   subSeen[topic][subtopic]   = new Set()
+
+    topicCases[topic].add(caseId)
+    subCases[topic][subtopic].add(caseId)
+
+    if (seenIds.has(String(q.id))) {
+      topicSeenCases[topic].add(caseId)
+      subSeen[topic][subtopic].add(caseId)
+    }
+  }
+
+  for (const topic of Object.keys(topicCases)) {
+    newCounts[topic] = {
+      total: topicCases[topic].size,
+      seen:  topicSeenCases[topic]?.size ?? 0,
+      subtopics: {}
+    }
+    for (const subtopic of Object.keys(subCases[topic] ?? {})) {
+      newCounts[topic].subtopics[subtopic] = {
+        total: subCases[topic][subtopic].size,
+        seen:  subSeen[topic]?.[subtopic]?.size ?? 0
+      }
+    }
+  }
+
+} else {
+  // MCQ: count individual questions as before
+  for (const q of allData) {
+    if (!newCounts[q.topic])
+      newCounts[q.topic] = { total: 0, seen: 0, subtopics: {} }
+    if (!newCounts[q.topic].subtopics[q.subtopic])
+      newCounts[q.topic].subtopics[q.subtopic] = { total: 0, seen: 0 }
+
+    newCounts[q.topic].total++
+    newCounts[q.topic].subtopics[q.subtopic].total++
+
+    if (seenIds.has(String(q.id))) {
+      newCounts[q.topic].seen++
+      newCounts[q.topic].subtopics[q.subtopic].seen++
+    }
+  }
+}
+
+setCounts(newCounts)
+  }
   fetchTopics()
 }, [questionType, onTopicsLoaded])
 
