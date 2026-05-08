@@ -51,7 +51,7 @@ export default function KawaiiLayout({ children, title, subtitle, onSeenReset }:
 </div>
 
 <div className="poster-strip poster-strip-right" aria-hidden="true">
-  {Array.from({ length: 40 }, (_, i) => POSTERS[(POSTERS.length - 1 - i) % POSTERS.length]).map((src, i) => (
+  {Array.from({ length: 40 }, (_, i) => POSTERS[(POSTERS.length - 1 - (i % POSTERS.length))]).map((src, i) => (
     <div key={i} className="poster-tile" style={{ '--rotation': `${(i % 2 === 0 ? -1 : 1) * (1 + (i % 3))}deg` } as React.CSSProperties}>
       <img src={src} alt="" draggable={false} />
     </div>
