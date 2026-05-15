@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { Mock, Question, SAQQuestion } from '@/types'
+import { PHASE_CONFIG, type StudentPhase } from '@/lib/phaseConfig'
 
 /**
  * Helper to restore the original order of questions based on the ID array
@@ -11,18 +12,44 @@ function sortByIdOrder<T extends { id: string }>(items: T[], ids: string[]): T[]
   return [...items].sort((a, b) => idOrder[a.id] - idOrder[b.id])
 }
 
-export async function fetchMocks(type?: 'sba' | 'saq'): Promise<Mock[]> {
+function normalizeId<T extends { id: unknown }>(row: T): T & { id: string } {
+  return { ...row, id: String(row.id) }
+}
+
+function isMissingSectionColumnError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false
+  if (error.code === 'PGRST204') return true
+  return typeof error.message === 'string' && /section/i.test(error.message)
+}
+
+export async function fetchMocks(phase: StudentPhase, type?: 'sba' | 'saq'): Promise<Mock[]> {
+  const section = PHASE_CONFIG[phase].mockSection
   // Build query dynamically
   let request = supabase
     .from('mocks')
     .select('*')
     .eq('is_active', true)
+    .eq('section', section)
 
   if (type) {
     request = request.eq('type', type)
   }
 
-  const { data, error } = await request.order('name')
+  let { data, error } = await request.order('name')
+  const shouldFallbackToLegacyMocks = isMissingSectionColumnError(error)
+
+  if (shouldFallbackToLegacyMocks) {
+    let fallback = supabase
+      .from('mocks')
+      .select('*')
+      .eq('is_active', true)
+    if (type) {
+      fallback = fallback.eq('type', type)
+    }
+    const fallbackResult = await fallback.order('name')
+    data = fallbackResult.data
+    error = fallbackResult.error
+  }
   
   if (error) {
     console.error('Error fetching mocks:', error)
@@ -39,12 +66,13 @@ export async function fetchMocks(type?: 'sba' | 'saq'): Promise<Mock[]> {
   }))
 }
 
-export async function loadSBAMock(mock: Mock): Promise<Question[]> {
+export async function loadSBAMock(mock: Mock, phase: StudentPhase): Promise<Question[]> {
   const ids = mock.question_ids as string[]
   if (!ids.length) return []
 
+  const mcqTable = PHASE_CONFIG[phase].mcqTable
   const { data, error } = await supabase
-    .from('questions')
+    .from(mcqTable)
     .select('*')
     .in('id', ids)
 
@@ -54,7 +82,7 @@ export async function loadSBAMock(mock: Mock): Promise<Question[]> {
   }
 
   const parsed = (data ?? []).map(q => ({
-    ...q,
+    ...normalizeId(q),
     options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options
   }))
 
@@ -65,12 +93,13 @@ export async function loadSBAMock(mock: Mock): Promise<Question[]> {
   return sortByIdOrder(parsed, ids)
 }
 
-export async function loadSAQMock(mock: Mock): Promise<SAQQuestion[]> {
+export async function loadSAQMock(mock: Mock, phase: StudentPhase): Promise<SAQQuestion[]> {
   const ids = mock.question_ids as string[]
   if (!ids.length) return []
 
+  const saqTable = PHASE_CONFIG[phase].saqTable
   const { data, error } = await supabase
-    .from('saq_questions')
+    .from(saqTable)
     .select('*')
     .in('id', ids)
 
@@ -80,7 +109,7 @@ export async function loadSAQMock(mock: Mock): Promise<SAQQuestion[]> {
   }
 
   const parsed = (data ?? []).map(q => ({
-    ...q,
+    ...normalizeId(q),
     marks: Number(q.marks) || 0,
     acceptable_answers: Array.isArray(q.acceptable_answers)
       ? q.acceptable_answers

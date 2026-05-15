@@ -4,8 +4,13 @@ import { fetchMocks, loadSBAMock, loadSAQMock } from '@/lib/mockLoader'
 import { useQuizSession } from '@/lib/quizSession'
 import { useRouter } from 'next/navigation'
 import type { Mock, QuizSession } from '@/types'
+import { PHASE_CONFIG, type StudentPhase } from '@/lib/phaseConfig'
 
-export default function MockSelector() {
+interface Props {
+  studentPhase: StudentPhase
+}
+
+export default function MockSelector({ studentPhase }: Props) {
   const router = useRouter()
   const init = useQuizSession((s: QuizSession) => s.init)
   const initSAQ = useQuizSession((s: QuizSession) => s.initSAQ)
@@ -17,29 +22,39 @@ export default function MockSelector() {
   const [exporting, setExporting] = useState<string | null>(null)
   const [loadingProgress, setLoadingProgress] = useState('')
 
+  const saqEnabled = PHASE_CONFIG[studentPhase].saqEnabled
+
   useEffect(() => {
-    fetchMocks().then(m => {
+    setLoading(true)
+    fetchMocks(studentPhase).then(m => {
       setMocks(m)
       setLoading(false)
     })
-  }, [])
+  }, [studentPhase])
+
+  useEffect(() => {
+    if (!saqEnabled && filter === 'saq') {
+      setFilter('sba')
+    }
+  }, [saqEnabled, filter])
 
   const sbaMocks = mocks.filter(m => m.type === 'sba')
-  const saqMocks = mocks.filter(m => m.type === 'saq')
-  const displayed = filter === 'all' ? mocks : filter === 'sba' ? sbaMocks : saqMocks
+  const saqMocks = saqEnabled ? mocks.filter(m => m.type === 'saq') : []
+  const availableMocks = saqEnabled ? mocks : sbaMocks
+  const displayed = filter === 'all' ? availableMocks : filter === 'sba' ? sbaMocks : saqMocks
 
   const launchMock = async (mock: Mock) => {
     setLaunching(mock.id)
     setLoadingProgress('Fetching questions...')
     try {
       if (mock.type === 'sba') {
-        const questions = await loadSBAMock(mock)
+        const questions = await loadSBAMock(mock, studentPhase)
         setLoadingProgress(`Loaded ${questions.length} questions`)
         // Use mock's time_seconds if set; fall back to 150 minutes for SBA
         const sbaTimer = (mock.time_seconds ?? 0) > 0 ? mock.time_seconds : 9000
         init(questions, 'exam', 'end', 'mcq', sbaTimer)
       } else {
-        const questions = await loadSAQMock(mock)
+        const questions = await loadSAQMock(mock, studentPhase)
         setLoadingProgress(`Loaded ${questions.length} questions`)
         // Use mock's time_seconds if set; fall back to 120 minutes for SAQ
         const saqTimer = (mock.time_seconds ?? 0) > 0 ? mock.time_seconds : 7200
@@ -55,9 +70,9 @@ export default function MockSelector() {
   const exportMock = async (mock: Mock) => {
     setExporting(mock.id)
     try {
-      const questions = mock.type === 'sba'
-        ? await loadSBAMock(mock)
-        : await loadSAQMock(mock)
+        const questions = mock.type === 'sba'
+        ? await loadSBAMock(mock, studentPhase)
+        : await loadSAQMock(mock, studentPhase)
 
       const response = await fetch('/api/export', {
         method: 'POST',
@@ -89,7 +104,7 @@ export default function MockSelector() {
       <p className="pixel-label" style={{ marginBottom: '12px' }}>★ MOCK PAPERS</p>
 
       <div className="mock-filter">
-        {(['all', 'sba', 'saq'] as const).map(f => (
+        {(['all', 'sba', 'saq'] as const).filter(f => saqEnabled || f !== 'saq').map(f => (
           <button
             key={f}
             className={`pill ${filter === f ? 'active' : ''}`}

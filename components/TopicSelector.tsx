@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase'
 import { getSeenIds } from '@/lib/seenTracker'
 import { TOPICS_ORDER, TOPIC_ORDER } from '@/data/topicsOrder'
 import { getCachedTopicMeta } from '@/lib/topicCache'
+import type { StudentPhase } from '@/lib/phaseConfig'
+import { PHASE_CONFIG } from '@/lib/phaseConfig'
 
 interface Selection {
   [topic: string]: { [subtopic: string]: number }
@@ -21,6 +23,7 @@ interface Props {
   onChange: (selections: Selection) => void
   onTopicsLoaded: (topics: Record<string, string[]>) => void
   questionType: 'mcq' | 'saq'
+  studentPhase: StudentPhase
 }
 
 function RingBadge({ seen, total, size = 'topic' }: {
@@ -71,7 +74,7 @@ function RingBadge({ seen, total, size = 'topic' }: {
   )
 }
 
-export default function TopicSelector({ onChange, onTopicsLoaded, questionType }: Props) {
+export default function TopicSelector({ onChange, onTopicsLoaded, questionType, studentPhase }: Props) {
   const [topics, setTopics] = useState<Record<string, string[]>>({})
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [selections, setSelections] = useState<Selection>({})
@@ -81,7 +84,7 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType }
   const fetchTopics = async () => {
     // getCachedTopicMeta handles all the pagination internally
     const allData = await getCachedTopicMeta(
-      questionType === 'saq' ? 'saq_questions' : 'questions'
+      questionType === 'saq' ? PHASE_CONFIG[studentPhase].saqTable : PHASE_CONFIG[studentPhase].mcqTable
     )
 
     // Build topic index
@@ -182,7 +185,7 @@ if (questionType === 'saq') {
 setCounts(newCounts)
   }
   fetchTopics()
-}, [questionType, onTopicsLoaded])
+}, [questionType, onTopicsLoaded, studentPhase])
 
   useEffect(() => { onChange(selections) }, [selections, onChange])
 
