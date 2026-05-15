@@ -98,7 +98,7 @@ export default function ModeSelector({
               className={`pill ${questionType === 'saq' ? 'active' : ''}`}
               onClick={() => onQuestionTypeChange('saq')}
               disabled={!saqEnabled}
-              title={saqEnabled ? undefined : 'Phase 1 SAQ will be added later'}
+              title={saqEnabled ? undefined : 'SAQ is not yet available for Phase 1'}
             >
               SAQ
             </button>

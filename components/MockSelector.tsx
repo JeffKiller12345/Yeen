@@ -4,7 +4,7 @@ import { fetchMocks, loadSBAMock, loadSAQMock } from '@/lib/mockLoader'
 import { useQuizSession } from '@/lib/quizSession'
 import { useRouter } from 'next/navigation'
 import type { Mock, QuizSession } from '@/types'
-import type { StudentPhase } from '@/lib/phaseConfig'
+import { PHASE_CONFIG, type StudentPhase } from '@/lib/phaseConfig'
 
 interface Props {
   studentPhase: StudentPhase
@@ -22,7 +22,7 @@ export default function MockSelector({ studentPhase }: Props) {
   const [exporting, setExporting] = useState<string | null>(null)
   const [loadingProgress, setLoadingProgress] = useState('')
 
-  const saqEnabled = studentPhase === 'phase2a'
+  const saqEnabled = PHASE_CONFIG[studentPhase].saqEnabled
 
   useEffect(() => {
     setLoading(true)
@@ -40,8 +40,8 @@ export default function MockSelector({ studentPhase }: Props) {
 
   const sbaMocks = mocks.filter(m => m.type === 'sba')
   const saqMocks = saqEnabled ? mocks.filter(m => m.type === 'saq') : []
-  const phaseMocks = saqEnabled ? mocks : sbaMocks
-  const displayed = filter === 'all' ? phaseMocks : filter === 'sba' ? sbaMocks : saqMocks
+  const availableMocks = saqEnabled ? mocks : sbaMocks
+  const displayed = filter === 'all' ? availableMocks : filter === 'sba' ? sbaMocks : saqMocks
 
   const launchMock = async (mock: Mock) => {
     setLaunching(mock.id)

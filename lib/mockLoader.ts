@@ -12,6 +12,16 @@ function sortByIdOrder<T extends { id: string }>(items: T[], ids: string[]): T[]
   return [...items].sort((a, b) => idOrder[a.id] - idOrder[b.id])
 }
 
+function normalizeId<T extends { id: unknown }>(row: T): T & { id: string } {
+  return { ...row, id: String(row.id) }
+}
+
+function isMissingSectionColumnError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false
+  if (error.code === 'PGRST204') return true
+  return typeof error.message === 'string' && /section/i.test(error.message)
+}
+
 export async function fetchMocks(phase: StudentPhase, type?: 'sba' | 'saq'): Promise<Mock[]> {
   const section = PHASE_CONFIG[phase].mockSection
   // Build query dynamically
@@ -26,7 +36,9 @@ export async function fetchMocks(phase: StudentPhase, type?: 'sba' | 'saq'): Pro
   }
 
   let { data, error } = await request.order('name')
-  if (error) {
+  const shouldFallbackToLegacyMocks = isMissingSectionColumnError(error)
+
+  if (shouldFallbackToLegacyMocks) {
     let fallback = supabase
       .from('mocks')
       .select('*')
@@ -70,8 +82,7 @@ export async function loadSBAMock(mock: Mock, phase: StudentPhase): Promise<Ques
   }
 
   const parsed = (data ?? []).map(q => ({
-    ...q,
-    id: String(q.id),
+    ...normalizeId(q),
     options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options
   }))
 
@@ -98,8 +109,7 @@ export async function loadSAQMock(mock: Mock, phase: StudentPhase): Promise<SAQQ
   }
 
   const parsed = (data ?? []).map(q => ({
-    ...q,
-    id: String(q.id),
+    ...normalizeId(q),
     marks: Number(q.marks) || 0,
     acceptable_answers: Array.isArray(q.acceptable_answers)
       ? q.acceptable_answers
