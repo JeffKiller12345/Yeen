@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import KawaiiLayout from '@/components/KawaiiLayout'
 import TopicSelector from '@/components/TopicSelector'
@@ -10,6 +10,7 @@ import { useQuizSession } from '@/lib/quizSession'
 import { supabase } from '@/lib/supabase'
 import { getCachedTopicMeta } from '@/lib/topicCache'
 import type { Question, QuizSession, StudyFeedbackMode, SeenMode, SAQQuestion } from '@/types'
+import { PHASE_CONFIG, type StudentPhase } from '@/lib/phaseConfig'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const initSAQ = useQuizSession((s: QuizSession) => s.initSAQ)
 
   const [questionType,  setQuestionType]  = useState<'mcq' | 'saq'>('mcq')
+  const [studentPhase,  setStudentPhase]  = useState<StudentPhase>('phase2a')
   const [selections,    setSelections]    = useState<Record<string, Record<string, number>>>({})
   const [examMode,      setExamMode]      = useState(false)
   const [feedbackMode,  setFeedbackMode]  = useState<StudyFeedbackMode>('immediate')
@@ -27,6 +29,13 @@ export default function Dashboard() {
   const [isExporting,   setIsExporting]   = useState(false)
   // FIX 2: Declare the missing isLoading state
   const [isLoading,     setIsLoading]     = useState(false)
+  const phaseConfig = PHASE_CONFIG[studentPhase]
+
+  useEffect(() => {
+    if (!phaseConfig.saqEnabled && questionType === 'saq') {
+      setQuestionType('mcq')
+    }
+  }, [phaseConfig.saqEnabled, questionType])
 
   const totalSelected = Object.values(selections)
     .flatMap(s => Object.values(s))
@@ -59,7 +68,7 @@ export default function Dashboard() {
       // Phase 1: fetch only the lightweight columns needed for selection logic.
       // This avoids downloading large 'text' and 'options' fields for the entire
       // topic pool when only a small subset will be picked.
-      const allMeta = await getCachedTopicMeta('questions')
+      const allMeta = await getCachedTopicMeta(phaseConfig.mcqTable)
       const meta = allMeta.filter(q => selectedTopics.includes(q.topic))
 
       if (meta.length === 0) { setError('Failed to fetch questions'); return }
@@ -71,7 +80,7 @@ export default function Dashboard() {
       // Phase 2: fetch full content only for the selected IDs.
       const selectedIds = selectedMeta.map((q: any) => q.id)
       const { data: fullQuestions, error: fullError } = await supabase
-        .from('questions')
+        .from(phaseConfig.mcqTable)
         .select('id, topic, subtopic, question, options, correct_answer, feedback, generated_at')
         .in('id', selectedIds)
 
@@ -96,7 +105,7 @@ export default function Dashboard() {
       // Phase 1: fetch only the metadata needed to build the case map and
       // shuffle/select cases. 'marks' is included because it's tiny and needed
       // for the timer calculation even before the full fetch.
-      const allMeta = await getCachedTopicMeta('saq_questions')
+      const allMeta = await getCachedTopicMeta(phaseConfig.saqTable)
       const meta = allMeta.filter(q => selectedTopics.includes(q.topic))
 
       if (meta.length === 0) { setError('Failed to fetch SAQs'); return }
@@ -121,7 +130,7 @@ export default function Dashboard() {
       // Phase 2: fetch full content (including large 'acceptable_answers' JSON)
       // only for the questions that were actually selected.
       const { data: fullSAQs, error: fullError } = await supabase
-  .from('saq_questions')
+        .from(phaseConfig.saqTable)
   .select('id, topic, subtopic, case_context, additional_context, question, marks, acceptable_answers, feedback, generated_at')
   .in('id', selectedIds)
 
@@ -173,10 +182,11 @@ export default function Dashboard() {
 
     try {
       const selectedTopics = getSelectedTopics()
+      const sourceTable = questionType === 'saq' ? phaseConfig.saqTable : phaseConfig.mcqTable
 
       // Phase 1: lightweight metadata fetch for selection.
       const { data: meta, error: metaError } = await supabase
-        .from(questionType === 'saq' ? 'saq_questions' : 'questions')
+        .from(sourceTable)
         .select('id, topic, subtopic')
         .in('topic', selectedTopics)
 
@@ -192,7 +202,7 @@ export default function Dashboard() {
   : 'id, topic, subtopic, question, options, correct_answer, feedback, generated_at'
 
       const { data: exportQuestions, error: exportError } = await supabase
-        .from(questionType === 'saq' ? 'saq_questions' : 'questions')
+        .from(sourceTable)
         .select(exportColumns)
         .in('id', selectedIds)
 
@@ -243,14 +253,18 @@ export default function Dashboard() {
           onFeedbackModeChange={setFeedbackMode}
           seenMode={seenMode}
           onSeenModeChange={setSeenMode}
+          studentPhase={studentPhase}
+          onStudentPhaseChange={setStudentPhase}
           questionType={questionType}
           onQuestionTypeChange={setQuestionType}
+          saqEnabled={phaseConfig.saqEnabled}
           onSeenReset={() => setSeenResetKey(k => k + 1)}
         />
 
         <TopicSelector
           key={seenResetKey}
           questionType={questionType}
+          studentPhase={studentPhase}
           onChange={setSelections}
           onTopicsLoaded={setTopics}
         />
@@ -289,7 +303,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <MockSelector />
+        <MockSelector studentPhase={studentPhase} />
       </div>
 
       <style jsx>{`

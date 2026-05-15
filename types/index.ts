@@ -94,6 +94,7 @@ export interface Mock {
   id: string;
   name: string;
   type: 'sba' | 'saq';
+  section?: string;
   question_ids: string[];
   total_questions: number;
   time_seconds: number;

@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { clearSeen } from '@/lib/seenTracker'
 import type { StudyFeedbackMode, SeenMode } from '@/types'
+import type { StudentPhase } from '@/lib/phaseConfig'
 
 interface Props {
   examMode: boolean
@@ -10,8 +11,11 @@ interface Props {
   onFeedbackModeChange: (v: StudyFeedbackMode) => void
   seenMode: SeenMode
   onSeenModeChange: (v: SeenMode) => void
+  studentPhase: StudentPhase
+  onStudentPhaseChange: (v: StudentPhase) => void
   questionType: 'mcq' | 'saq'
   onQuestionTypeChange: (v: 'mcq' | 'saq') => void
+  saqEnabled: boolean
   onSeenReset?: () => void
 }
 
@@ -19,7 +23,9 @@ export default function ModeSelector({
   examMode, onExamModeChange,
   feedbackMode, onFeedbackModeChange,
   seenMode, onSeenModeChange,
+  studentPhase, onStudentPhaseChange,
   questionType, onQuestionTypeChange,
+  saqEnabled,
   onSeenReset,
 }: Props) {
   const [resetState, setResetState] = useState<'idle' | 'confirming' | 'done'>('idle')
@@ -57,6 +63,27 @@ export default function ModeSelector({
         {/* Question type */}
         <div className="mode-row">
           <div className="mode-info">
+            <span className="mode-name">Student Phase</span>
+            <span className="mode-desc">Choose your year group</span>
+          </div>
+          <div className="pill-toggle">
+            <button
+              className={`pill ${studentPhase === 'phase2a' ? 'active' : ''}`}
+              onClick={() => onStudentPhaseChange('phase2a')}
+            >
+              Phase 2a
+            </button>
+            <button
+              className={`pill ${studentPhase === 'phase1' ? 'active' : ''}`}
+              onClick={() => onStudentPhaseChange('phase1')}
+            >
+              Phase 1
+            </button>
+          </div>
+        </div>
+
+        <div className="mode-row">
+          <div className="mode-info">
             <span className="mode-name">Question Type</span>
             <span className="mode-desc">SBA or SAQ</span>
           </div>
@@ -70,6 +97,8 @@ export default function ModeSelector({
             <button
               className={`pill ${questionType === 'saq' ? 'active' : ''}`}
               onClick={() => onQuestionTypeChange('saq')}
+              disabled={!saqEnabled}
+              title={saqEnabled ? undefined : 'Phase 1 SAQ will be added later'}
             >
               SAQ
             </button>
@@ -164,6 +193,7 @@ export default function ModeSelector({
         .pill:last-child { border-right: none; }
         .pill.active { background: var(--pink-mid); color: white; }
         .pill:hover:not(.active) { background: var(--pink-light); }
+        .pill:disabled { opacity: 0.5; cursor: not-allowed; background: #f5f5f5; color: #999; }
         .reset-btn { font-family: var(--font-pixel); font-size: 7px; padding: 6px 12px; background: white; border: 2px solid var(--pink-mid); color: var(--pink-dark); cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
         .reset-btn:hover { background: var(--pink-light); }
         .confirm-row { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }

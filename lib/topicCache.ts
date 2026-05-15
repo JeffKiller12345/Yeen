@@ -8,7 +8,7 @@ const cache: Record<string, CacheEntry> = {}
 const TTL = Infinity
 
 export async function getCachedTopicMeta(
-  table: 'questions' | 'saq_questions'
+  table: 'questions' | 'medical_questions' | 'saq_questions'
 ): Promise<{ id: string; topic: string; subtopic: string }[]> {
   const now = Date.now()
   if (cache[table] && now - cache[table].fetchedAt < TTL) {
@@ -27,7 +27,7 @@ export async function getCachedTopicMeta(
       .range(from, from + step - 1)
 
     if (error || !data) break
-    allData.push(...data)
+    allData.push(...data.map((row: any) => ({ ...row, id: String(row.id) })))
     hasMore = data.length === step
     from += step
   }
