@@ -22,6 +22,24 @@ function isMissingSectionColumnError(error: { code?: string; message?: string } 
   return typeof error.message === 'string' && /section/i.test(error.message)
 }
 
+function inferMockPhase(mock: Partial<Mock>): StudentPhase | null {
+  if (mock.section === 'phase1' || mock.section === 'phase2a') {
+    return mock.section
+  }
+
+  if (typeof mock.id === 'string') {
+    if (mock.id.startsWith('phase1_')) return 'phase1'
+    if (mock.id.startsWith('phase2a_')) return 'phase2a'
+  }
+
+  if (typeof mock.name === 'string') {
+    if (/^phase 1\b/i.test(mock.name)) return 'phase1'
+    if (/^phase 2a\b/i.test(mock.name)) return 'phase2a'
+  }
+
+  return null
+}
+
 export async function fetchMocks(phase: StudentPhase, type?: 'sba' | 'saq'): Promise<Mock[]> {
   const section = PHASE_CONFIG[phase].mockSection
   // Build query dynamically
@@ -56,14 +74,19 @@ export async function fetchMocks(phase: StudentPhase, type?: 'sba' | 'saq'): Pro
     return []
   }
 
-  return (data ?? []).map(m => ({
+  return (data ?? [])
+    .filter(m => {
+      const inferredPhase = inferMockPhase(m)
+      return inferredPhase === null || inferredPhase === phase
+    })
+    .map(m => ({
     ...m,
     // JSON columns in Supabase usually return as objects/arrays automatically, 
     // but this check keeps it robust against stringified storage.
     question_ids: Array.isArray(m.question_ids) 
       ? m.question_ids 
       : JSON.parse(m.question_ids || '[]')
-  }))
+    }))
 }
 
 export async function loadSBAMock(mock: Mock, phase: StudentPhase): Promise<Question[]> {
