@@ -15,6 +15,55 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
+export function getSAQCaseId(id: string): string {
+  return String(id).replace(/_Q\d+$/, '')
+}
+
+export function selectSAQCases<T extends Pick<Question, 'id' | 'topic' | 'subtopic'>>(
+  bank: T[],
+  selections: Record<string, Record<string, number>>
+): T[] {
+  const casesByTopic: Record<string, T[][]> = {}
+  const caseMap = new Map<string, T[]>()
+
+  for (const question of bank) {
+    const caseId = getSAQCaseId(String(question.id))
+    const existing = caseMap.get(caseId)
+
+    if (existing) {
+      existing.push(question)
+      continue
+    }
+
+    caseMap.set(caseId, [question])
+  }
+
+  for (const questions of caseMap.values()) {
+    const topic = questions[0]?.topic
+    if (!topic) continue
+
+    if (!casesByTopic[topic]) {
+      casesByTopic[topic] = []
+    }
+
+    casesByTopic[topic].push(
+      [...questions].sort((a, b) => String(a.id).localeCompare(String(b.id)))
+    )
+  }
+
+  const result: T[] = []
+
+  for (const [topic, subtopics] of Object.entries(selections)) {
+    const count = Object.values(subtopics).reduce((sum, value) => sum + (value || 0), 0)
+    if (count <= 0) continue
+
+    const selectedCases = shuffle(casesByTopic[topic] ?? []).slice(0, count)
+    result.push(...selectedCases.flat())
+  }
+
+  return result
+}
+
 export async function selectQuestions<T extends Pick<Question, 'id' | 'topic' | 'subtopic'>>(
   bank: T[],
   config: LocalSelectionConfig
