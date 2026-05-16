@@ -23,18 +23,22 @@ function isMissingSectionColumnError(error: { code?: string; message?: string } 
 }
 
 function inferMockPhase(mock: Partial<Mock>): StudentPhase | null {
-  if (mock.section === 'phase1' || mock.section === 'phase2a') {
-    return mock.section
-  }
+  for (const [phase, config] of Object.entries(PHASE_CONFIG) as [StudentPhase, (typeof PHASE_CONFIG)[StudentPhase]][]) {
+    if (mock.section === config.mockSection) {
+      return phase
+    }
 
-  if (typeof mock.id === 'string') {
-    if (mock.id.startsWith('phase1_')) return 'phase1'
-    if (mock.id.startsWith('phase2a_')) return 'phase2a'
-  }
+    if (typeof mock.id === 'string' && mock.id.startsWith(`${config.mockSection}_`)) {
+      return phase
+    }
 
-  if (typeof mock.name === 'string') {
-    if (/^phase 1(?:\s|:|$)/i.test(mock.name)) return 'phase1'
-    if (/^phase 2a(?:\s|:|$)/i.test(mock.name)) return 'phase2a'
+    if (typeof mock.name === 'string') {
+      const escapedLabel = config.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const labelPattern = new RegExp(`^${escapedLabel}(?:\\s|:|$)`, 'i')
+      if (labelPattern.test(mock.name)) {
+        return phase
+      }
+    }
   }
 
   return null
@@ -77,6 +81,10 @@ export async function fetchMocks(phase: StudentPhase, type?: 'sba' | 'saq'): Pro
   return (data ?? [])
     .filter(m => {
       const inferredPhase = inferMockPhase(m)
+      if (inferredPhase === null) {
+        console.warn(`Skipping mock with unrecognised phase: ${m.id ?? m.name ?? 'unknown mock'}`)
+        return false
+      }
       return inferredPhase === phase
     })
     .map(m => ({
