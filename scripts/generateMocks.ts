@@ -9,7 +9,7 @@ const supabase = createClient(
   process.env.SUPABASE_SECRET_KEY!
 )
 
-type PhaseKey = 'phase1' | 'phase2a'
+type PhaseKey = 'phase1'
 
 interface Question {
   id: string
@@ -38,204 +38,91 @@ interface PhaseMockConfig {
   logSAQCapacity: (casesByTopic: Record<string, CaseGroup[]>, maxMocks: number) => void
 }
 
-const PHASE2A_SBA_HIGH_YIELD = [
-  'Microbiology',
-  'Cardiovascular Medicine',
-  'Gastrointestinal and Hepatic Medicine',
-  'Neurology',
-]
-const PHASE2A_SAQ_HIGH_YIELD = [
-  'Microbiology',
-  'Respiratory Medicine',
-  'Cardiovascular Medicine',
-  'Gastrointestinal and Hepatic Medicine',
-  'Neurology',
-]
-const PHASE2A_SAQ_EXCLUDED_TOPICS = ['Public Health and Population Health Science']
-const PHASE2A_SAQ_OTHER_COUNT = 7
-
 const PHASE1_SHORT_SBA_TOPICS = ['H. Prescribing', 'J. Critical Numbers']
 const PHASE1_SAQ_TARGET_CASES = 12
 
-const PHASE_CONFIGS: PhaseMockConfig[] = [
-  {
-    phase: 'phase2a',
-    label: 'Phase 2a',
-    sbaTable: 'questions',
-    saqTable: 'saq_questions',
-    getSBACount(topic) {
-      return PHASE2A_SBA_HIGH_YIELD.some(highYield => topic.includes(highYield)) ? 10 : 5
-    },
-    getSBALimit(topicCounts) {
-      const capacities = Object.keys(topicCounts).map(topic =>
-        Math.floor(topicCounts[topic] / (PHASE2A_SBA_HIGH_YIELD.some(highYield => topic.includes(highYield)) ? 10 : 5))
-      )
-      return capacities.length > 0 ? Math.min(...capacities) : 0
-    },
-    logSBACapacity(topicCounts, maxMocks) {
-      console.log('\n📊 Phase 2a SBA Topic Capacity:')
-      const capacities = Object.keys(topicCounts).map(topic => {
-        const required = PHASE2A_SBA_HIGH_YIELD.some(highYield => topic.includes(highYield)) ? 10 : 5
-        const capacity = Math.floor(topicCounts[topic] / required)
-        return { topic, questions: topicCounts[topic], required, capacity }
-      })
-
-      capacities
-        .sort((a, b) => a.capacity - b.capacity)
-        .forEach(({ topic, questions, required, capacity }) =>
-          console.log(`  ${capacity === maxMocks ? '🔴' : '  '} ${topic}: ${questions}q ÷ ${required} = ${capacity} mocks`)
-        )
-
-      console.log(`  → Phase 2a SBA limit: ${maxMocks} mocks\n`)
-    },
-    selectSAQCases(casesByTopic, mockNumber) {
-      const selected: CaseGroup[] = []
-
-      for (const highYield of PHASE2A_SAQ_HIGH_YIELD) {
-        const topic = Object.keys(casesByTopic).find(candidate => candidate.includes(highYield))
-        if (!topic) continue
-
-        const pool = casesByTopic[topic] ?? []
-        if (pool.length === 0) continue
-
-        selected.push(pool[(mockNumber - 1) % pool.length])
-      }
-
-      const otherTopics = Object.keys(casesByTopic)
-        .filter(topic => !PHASE2A_SAQ_HIGH_YIELD.some(highYield => topic.includes(highYield)))
-        .sort()
-
-      const offset = (mockNumber - 1) * PHASE2A_SAQ_OTHER_COUNT
-      for (let i = 0; i < PHASE2A_SAQ_OTHER_COUNT; i++) {
-        const topic = otherTopics[(offset + i) % otherTopics.length]
-        if (!topic) continue
-
-        const pool = casesByTopic[topic] ?? []
-        if (pool.length === 0) continue
-
-        selected.push(pool[Math.floor((offset + i) / otherTopics.length) % pool.length])
-      }
-
-      return selected
-    },
-    getSAQLimit(casesByTopic) {
-      const topicNames = Object.keys(casesByTopic)
-      const highYieldLimits = PHASE2A_SAQ_HIGH_YIELD.map(highYield => {
-        const topic = topicNames.find(candidate => candidate.includes(highYield))
-        return topic ? casesByTopic[topic]?.length ?? 0 : 0
-      })
-      const otherTotal = topicNames
-        .filter(topic => !PHASE2A_SAQ_HIGH_YIELD.some(highYield => topic.includes(highYield)))
-        .reduce((sum, topic) => sum + (casesByTopic[topic]?.length ?? 0), 0)
-
-      return Math.min(...highYieldLimits, Math.floor(otherTotal / PHASE2A_SAQ_OTHER_COUNT))
-    },
-    logSAQCapacity(casesByTopic, maxMocks) {
-      console.log('📊 Phase 2a SAQ Topic Capacity:')
-      const topicNames = Object.keys(casesByTopic)
-      const highYieldLimits = PHASE2A_SAQ_HIGH_YIELD.map(highYield => {
-        const topic = topicNames.find(candidate => candidate.includes(highYield))
-        return topic ? casesByTopic[topic]?.length ?? 0 : 0
-      })
-
-      PHASE2A_SAQ_HIGH_YIELD.forEach(highYield => {
-        const topic = topicNames.find(candidate => candidate.includes(highYield))
-        const caseCount = topic ? casesByTopic[topic]?.length ?? 0 : 0
-        console.log(`  ${caseCount === Math.min(...highYieldLimits) ? '🔴' : '  '} [HY] ${highYield}: ${caseCount} cases = ${caseCount} mocks`)
-      })
-
-      const otherTotal = topicNames
-        .filter(topic => !PHASE2A_SAQ_HIGH_YIELD.some(highYield => topic.includes(highYield)))
-        .reduce((sum, topic) => sum + (casesByTopic[topic]?.length ?? 0), 0)
-      const otherCapacity = Math.floor(otherTotal / PHASE2A_SAQ_OTHER_COUNT)
-
-      console.log(`  ${otherCapacity === maxMocks ? '🔴' : '  '} [Other] ${otherTotal} cases ÷ ${PHASE2A_SAQ_OTHER_COUNT} per paper = ${otherCapacity} mocks`)
-      console.log(`  → Phase 2a SAQ limit: ${maxMocks} mocks\n`)
-    },
+const PHASE_CONFIG: PhaseMockConfig = {
+  phase: 'phase1',
+  label: 'Phase 1',
+  sbaTable: 'medical_questions',
+  saqTable: 'phase1saq',
+  getSBACount(topic) {
+    return PHASE1_SHORT_SBA_TOPICS.some(shortTopic => topic.startsWith(shortTopic)) ? 5 : 10
   },
-  {
-    phase: 'phase1',
-    label: 'Phase 1',
-    sbaTable: 'medical_questions',
-    saqTable: 'phase1saq',
-    getSBACount(topic) {
-      return PHASE1_SHORT_SBA_TOPICS.some(shortTopic => topic.startsWith(shortTopic)) ? 5 : 10
-    },
-    getSBALimit(topicCounts) {
-      const capacities = Object.keys(topicCounts).map(topic =>
-        Math.floor(topicCounts[topic] / (PHASE1_SHORT_SBA_TOPICS.some(shortTopic => topic.startsWith(shortTopic)) ? 5 : 10))
-      )
-      return capacities.length > 0 ? Math.min(...capacities) : 0
-    },
-    logSBACapacity(topicCounts, maxMocks) {
-      console.log('\n📊 Phase 1 SBA Topic Capacity:')
-      const capacities = Object.keys(topicCounts).map(topic => {
-        const required = PHASE1_SHORT_SBA_TOPICS.some(shortTopic => topic.startsWith(shortTopic)) ? 5 : 10
-        const capacity = Math.floor(topicCounts[topic] / required)
-        return { topic, questions: topicCounts[topic], required, capacity }
-      })
-
-      capacities
-        .sort((a, b) => a.capacity - b.capacity)
-        .forEach(({ topic, questions, required, capacity }) =>
-          console.log(`  ${capacity === maxMocks ? '🔴' : '  '} ${topic}: ${questions}q ÷ ${required} = ${capacity} mocks`)
-        )
-
-      console.log(`  → Phase 1 SBA limit: ${maxMocks} mocks\n`)
-    },
-    selectSAQCases(casesByTopic, mockNumber) {
-      const selected: CaseGroup[] = []
-      const selectedIds = new Set<string>()
-      const topics = Object.keys(casesByTopic).sort()
-
-      for (const topic of topics) {
-        const pool = casesByTopic[topic] ?? []
-        if (pool.length === 0) continue
-
-        const picked = pool[(mockNumber - 1) % pool.length]
-        selected.push(picked)
-        selectedIds.add(picked.caseId)
-      }
-
-      const remainingNeeded = Math.max(0, PHASE1_SAQ_TARGET_CASES - selected.length)
-      if (remainingNeeded === 0) {
-        return selected
-      }
-
-      const remainingCases = shuffle(
-        Object.values(casesByTopic)
-          .flat()
-          .filter(caseGroup => !selectedIds.has(caseGroup.caseId))
-      )
-
-      selected.push(...selectRotatedItems(remainingCases, remainingNeeded, mockNumber))
-      return selected
-    },
-    getSAQLimit(casesByTopic) {
-      const topics = Object.keys(casesByTopic)
-      if (topics.length === 0) return 0
-
-      const minPerSection = Math.min(...topics.map(topic => casesByTopic[topic]?.length ?? 0))
-      const totalCases = topics.reduce((sum, topic) => sum + (casesByTopic[topic]?.length ?? 0), 0)
-      return Math.min(minPerSection, Math.floor(totalCases / PHASE1_SAQ_TARGET_CASES))
-    },
-    logSAQCapacity(casesByTopic, maxMocks) {
-      console.log('📊 Phase 1 SAQ Section Capacity:')
-      const topics = Object.keys(casesByTopic).sort()
-      const minPerSection = Math.min(...topics.map(topic => casesByTopic[topic]?.length ?? 0))
-
-      topics.forEach(topic => {
-        const caseCount = casesByTopic[topic]?.length ?? 0
-        console.log(`  ${caseCount === minPerSection ? '🔴' : '  '} ${topic}: ${caseCount} cases`)
-      })
-
-      const totalCases = topics.reduce((sum, topic) => sum + (casesByTopic[topic]?.length ?? 0), 0)
-      const totalCapacity = Math.floor(totalCases / PHASE1_SAQ_TARGET_CASES)
-      console.log(`  ${totalCapacity === maxMocks ? '🔴' : '  '} [Total] ${totalCases} cases ÷ ${PHASE1_SAQ_TARGET_CASES} per paper = ${totalCapacity} mocks`)
-      console.log(`  → Phase 1 SAQ limit: ${maxMocks} mocks\n`)
-    },
+  getSBALimit(topicCounts) {
+    const capacities = Object.keys(topicCounts).map(topic =>
+      Math.floor(topicCounts[topic] / (PHASE1_SHORT_SBA_TOPICS.some(shortTopic => topic.startsWith(shortTopic)) ? 5 : 10))
+    )
+    return capacities.length > 0 ? Math.min(...capacities) : 0
   },
-]
+  logSBACapacity(topicCounts, maxMocks) {
+    console.log('\n📊 Phase 1 SBA Topic Capacity:')
+    const capacities = Object.keys(topicCounts).map(topic => {
+      const required = PHASE1_SHORT_SBA_TOPICS.some(shortTopic => topic.startsWith(shortTopic)) ? 5 : 10
+      const capacity = Math.floor(topicCounts[topic] / required)
+      return { topic, questions: topicCounts[topic], required, capacity }
+    })
+
+    capacities
+      .sort((a, b) => a.capacity - b.capacity)
+      .forEach(({ topic, questions, required, capacity }) =>
+        console.log(`  ${capacity === maxMocks ? '🔴' : '  '} ${topic}: ${questions}q ÷ ${required} = ${capacity} mocks`)
+      )
+
+    console.log(`  → Phase 1 SBA limit: ${maxMocks} mocks\n`)
+  },
+  selectSAQCases(casesByTopic, mockNumber) {
+    const selected: CaseGroup[] = []
+    const selectedIds = new Set<string>()
+    const topics = Object.keys(casesByTopic).sort()
+
+    for (const topic of topics) {
+      const pool = casesByTopic[topic] ?? []
+      if (pool.length === 0) continue
+
+      const picked = pool[(mockNumber - 1) % pool.length]
+      selected.push(picked)
+      selectedIds.add(picked.caseId)
+    }
+
+    const remainingNeeded = Math.max(0, PHASE1_SAQ_TARGET_CASES - selected.length)
+    if (remainingNeeded === 0) {
+      return selected
+    }
+
+    const remainingCases = shuffle(
+      Object.values(casesByTopic)
+        .flat()
+        .filter(caseGroup => !selectedIds.has(caseGroup.caseId))
+    )
+
+    selected.push(...selectRotatedItems(remainingCases, remainingNeeded, mockNumber))
+    return selected
+  },
+  getSAQLimit(casesByTopic) {
+    const topics = Object.keys(casesByTopic)
+    if (topics.length === 0) return 0
+
+    const minPerSection = Math.min(...topics.map(topic => casesByTopic[topic]?.length ?? 0))
+    const totalCases = topics.reduce((sum, topic) => sum + (casesByTopic[topic]?.length ?? 0), 0)
+    return Math.min(minPerSection, Math.floor(totalCases / PHASE1_SAQ_TARGET_CASES))
+  },
+  logSAQCapacity(casesByTopic, maxMocks) {
+    console.log('📊 Phase 1 SAQ Section Capacity:')
+    const topics = Object.keys(casesByTopic).sort()
+    const minPerSection = Math.min(...topics.map(topic => casesByTopic[topic]?.length ?? 0))
+
+    topics.forEach(topic => {
+      const caseCount = casesByTopic[topic]?.length ?? 0
+      console.log(`  ${caseCount === minPerSection ? '🔴' : '  '} ${topic}: ${caseCount} cases`)
+    })
+
+    const totalCases = topics.reduce((sum, topic) => sum + (casesByTopic[topic]?.length ?? 0), 0)
+    const totalCapacity = Math.floor(totalCases / PHASE1_SAQ_TARGET_CASES)
+    console.log(`  ${totalCapacity === maxMocks ? '🔴' : '  '} [Total] ${totalCases} cases ÷ ${PHASE1_SAQ_TARGET_CASES} per paper = ${totalCapacity} mocks`)
+    console.log(`  → Phase 1 SAQ limit: ${maxMocks} mocks\n`)
+  },
+}
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
@@ -345,8 +232,7 @@ async function generateSAQMock(
   mockNumber: number,
   config: PhaseMockConfig
 ): Promise<void> {
-  const excludedTopics = config.phase === 'phase2a' ? PHASE2A_SAQ_EXCLUDED_TOPICS : []
-  const casesByTopic = buildCasesByTopic(allSAQs, excludedTopics)
+  const casesByTopic = buildCasesByTopic(allSAQs)
   const selectedCases = config.selectSAQCases(casesByTopic, mockNumber)
 
   const selectedIds = selectedCases.flatMap(caseGroup => caseGroup.ids)
@@ -380,10 +266,7 @@ async function generatePhaseMocks(config: PhaseMockConfig): Promise<void> {
   const maxSBAMocks = config.getSBALimit(sbaTopicCounts)
   config.logSBACapacity(sbaTopicCounts, maxSBAMocks)
 
-  const casesByTopic = buildCasesByTopic(
-    saqData,
-    config.phase === 'phase2a' ? PHASE2A_SAQ_EXCLUDED_TOPICS : []
-  )
+  const casesByTopic = buildCasesByTopic(saqData)
   const maxSAQMocks = config.getSAQLimit(casesByTopic)
   config.logSAQCapacity(casesByTopic, maxSAQMocks)
 
@@ -398,9 +281,7 @@ async function generatePhaseMocks(config: PhaseMockConfig): Promise<void> {
 
 async function main() {
   try {
-    for (const config of PHASE_CONFIGS) {
-      await generatePhaseMocks(config)
-    }
+    await generatePhaseMocks(PHASE_CONFIG)
   } catch (error) {
     console.error(error)
   }
