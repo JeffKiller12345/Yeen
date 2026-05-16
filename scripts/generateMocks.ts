@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import * as dotenv from 'dotenv'
 import path from 'path'
+import { getSAQCaseId } from '../lib/saqCases'
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 
@@ -9,193 +10,278 @@ const supabase = createClient(
   process.env.SUPABASE_SECRET_KEY!
 )
 
-// --- CONFIGURATION ---
-const SBA_HIGH_YIELD = ['Microbiology', 'Cardiovascular Medicine', 'Gastrointestinal and Hepatic Medicine', 'Neurology'];
-const SAQ_HIGH_YIELD = ['Microbiology', 'Respiratory Medicine', 'Cardiovascular Medicine', 'Gastrointestinal and Hepatic Medicine', 'Neurology'];
-const SAQ_EXCLUDED_TOPICS = ['Public Health and Population Health Science'];
-const SBA_HIGH_YIELD_COUNT = 10;
-const SBA_DEFAULT_COUNT = 5;
-const SAQ_OTHER_COUNT = 7; // Number of "Other" cases to add per paper
+type PhaseKey = 'phase1'
 
 interface Question {
-  id: string;
-  topic: string;
-  subtopic: string;
-  marks?: number;
+  id: string
+  topic: string
+  subtopic: string
+  marks?: number
 }
 
-// --- HELPERS ---
+interface CaseGroup {
+  caseId: string
+  topic: string
+  ids: string[]
+  totalMarks: number
+}
+
+interface PhaseMockConfig {
+  phase: PhaseKey
+  label: string
+  sbaTable: string
+  saqTable: string
+  getSBACount: (topic: string) => number
+  getSBALimit: (topicCounts: Record<string, number>) => number
+  logSBACapacity: (topicCounts: Record<string, number>, maxMocks: number) => void
+  selectSAQCases: (casesByTopic: Record<string, CaseGroup[]>, mockNumber: number) => CaseGroup[]
+  getSAQLimit: (casesByTopic: Record<string, CaseGroup[]>) => number
+  logSAQCapacity: (casesByTopic: Record<string, CaseGroup[]>, maxMocks: number) => void
+}
+
+const PHASE1_SHORT_SBA_TOPICS = ['H. Prescribing', 'J. Critical Numbers']
+const PHASE1_SAQ_TARGET_CASES = 12
+
+const PHASE_CONFIG: PhaseMockConfig = {
+  phase: 'phase1',
+  label: 'Phase 1',
+  sbaTable: 'medical_questions',
+  saqTable: 'phase1saq',
+  getSBACount(topic) {
+    return PHASE1_SHORT_SBA_TOPICS.some(shortTopic => topic.startsWith(shortTopic)) ? 5 : 10
+  },
+  getSBALimit(topicCounts) {
+    const capacities = Object.keys(topicCounts).map(topic =>
+      Math.floor(topicCounts[topic] / (PHASE1_SHORT_SBA_TOPICS.some(shortTopic => topic.startsWith(shortTopic)) ? 5 : 10))
+    )
+    return capacities.length > 0 ? Math.min(...capacities) : 0
+  },
+  logSBACapacity(topicCounts, maxMocks) {
+    console.log('\n📊 Phase 1 SBA Topic Capacity:')
+    const capacities = Object.keys(topicCounts).map(topic => {
+      const required = PHASE1_SHORT_SBA_TOPICS.some(shortTopic => topic.startsWith(shortTopic)) ? 5 : 10
+      const capacity = Math.floor(topicCounts[topic] / required)
+      return { topic, questions: topicCounts[topic], required, capacity }
+    })
+
+    capacities
+      .sort((a, b) => a.capacity - b.capacity)
+      .forEach(({ topic, questions, required, capacity }) =>
+        console.log(`  ${capacity === maxMocks ? '🔴' : '  '} ${topic}: ${questions}q ÷ ${required} = ${capacity} mocks`)
+      )
+
+    console.log(`  → Phase 1 SBA limit: ${maxMocks} mocks\n`)
+  },
+  selectSAQCases(casesByTopic, mockNumber) {
+    const selected: CaseGroup[] = []
+    const selectedIds = new Set<string>()
+    const topics = Object.keys(casesByTopic).sort()
+
+    for (const topic of topics) {
+      const pool = casesByTopic[topic] ?? []
+      if (pool.length === 0) continue
+
+      const picked = pool[(mockNumber - 1) % pool.length]
+      selected.push(picked)
+      selectedIds.add(picked.caseId)
+    }
+
+    const remainingNeeded = Math.max(0, PHASE1_SAQ_TARGET_CASES - selected.length)
+    if (remainingNeeded === 0) {
+      return selected
+    }
+
+    const remainingCases = shuffle(
+      Object.values(casesByTopic)
+        .flat()
+        .filter(caseGroup => !selectedIds.has(caseGroup.caseId))
+    )
+
+    selected.push(...selectRotatedItems(remainingCases, remainingNeeded, mockNumber))
+    return selected
+  },
+  getSAQLimit(casesByTopic) {
+    const topics = Object.keys(casesByTopic)
+    if (topics.length === 0) return 0
+
+    const minPerSection = Math.min(...topics.map(topic => casesByTopic[topic]?.length ?? 0))
+    const totalCases = topics.reduce((sum, topic) => sum + (casesByTopic[topic]?.length ?? 0), 0)
+    return Math.min(minPerSection, Math.floor(totalCases / PHASE1_SAQ_TARGET_CASES))
+  },
+  logSAQCapacity(casesByTopic, maxMocks) {
+    console.log('📊 Phase 1 SAQ Section Capacity:')
+    const topics = Object.keys(casesByTopic).sort()
+    const minPerSection = Math.min(...topics.map(topic => casesByTopic[topic]?.length ?? 0))
+
+    topics.forEach(topic => {
+      const caseCount = casesByTopic[topic]?.length ?? 0
+      console.log(`  ${caseCount === minPerSection ? '🔴' : '  '} ${topic}: ${caseCount} cases`)
+    })
+
+    const totalCases = topics.reduce((sum, topic) => sum + (casesByTopic[topic]?.length ?? 0), 0)
+    const totalCapacity = Math.floor(totalCases / PHASE1_SAQ_TARGET_CASES)
+    console.log(`  ${totalCapacity === maxMocks ? '🔴' : '  '} [Total] ${totalCases} cases ÷ ${PHASE1_SAQ_TARGET_CASES} per paper = ${totalCapacity} mocks`)
+    console.log(`  → Phase 1 SAQ limit: ${maxMocks} mocks\n`)
+  },
+}
+
 function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
+  const a = [...arr]
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
   }
-  return a;
+  return a
+}
+
+function selectRotatedItems<T>(pool: T[], count: number, mockNumber: number): T[] {
+  if (count <= 0 || pool.length === 0) return []
+
+  const offset = ((mockNumber - 1) * count) % pool.length
+  const rotated = [...pool.slice(offset), ...pool.slice(0, offset)]
+  return rotated.slice(0, Math.min(count, pool.length))
 }
 
 async function fetchAll(table: string, columns: string): Promise<Question[]> {
-  let allData: Question[] = [];
-  let from = 0;
-  const step = 999;
+  let allData: Question[] = []
+  let from = 0
+  const step = 999
+
   while (true) {
-    const { data, error } = await supabase.from(table).select(columns).range(from, from + step);
-    if (error) throw error;
-    if (!data || data.length === 0) break;
-    allData = [...allData, ...data as unknown as Question[]];
-    if (data.length <= step) break;
-    from += step + 1;
+    const { data, error } = await supabase.from(table).select(columns).range(from, from + step)
+    if (error) throw error
+    if (!data || data.length === 0) break
+
+    allData = [...allData, ...data as unknown as Question[]]
+    if (data.length <= step) break
+    from += step + 1
   }
-  return allData;
+
+  return allData
 }
 
-// --- GENERATORS ---
-async function generateSBAMock(allQuestions: Question[], mockNumber: number): Promise<void> {
-  const byTopic: Record<string, Question[]> = {};
-  allQuestions.forEach(q => {
-    if (!byTopic[q.topic]) byTopic[q.topic] = [];
-    byTopic[q.topic].push(q);
-  });
+function buildCasesByTopic(allSAQs: Question[], excludedTopics: string[] = []): Record<string, CaseGroup[]> {
+  const cases: Record<string, CaseGroup> = {}
 
-  const selected: string[] = [];
-  for (const topic in byTopic) {
-    const isHighYield = SBA_HIGH_YIELD.some(hy => topic.includes(hy));
-    const count = isHighYield ? SBA_HIGH_YIELD_COUNT : SBA_DEFAULT_COUNT;
-    const pool = byTopic[topic];
-    const offset = ((mockNumber - 1) * count) % pool.length;
-    const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
-    selected.push(...rotated.slice(0, count).map(q => q.id));
-  }
+  allSAQs.forEach(question => {
+    if (excludedTopics.some(excludedTopic => question.topic.includes(excludedTopic))) return
 
-  const finalIds = shuffle(selected);
+    const caseId = getSAQCaseId(question.id)
+    if (!cases[caseId]) {
+      cases[caseId] = {
+        caseId,
+        topic: question.topic,
+        ids: [],
+        totalMarks: 0,
+      }
+    }
+
+    cases[caseId].ids.push(question.id)
+    cases[caseId].totalMarks += question.marks ?? 0
+  })
+
+  const casesByTopic: Record<string, CaseGroup[]> = {}
+
+  Object.values(cases).forEach(caseGroup => {
+    caseGroup.ids.sort((a, b) => a.localeCompare(b))
+    if (!casesByTopic[caseGroup.topic]) {
+      casesByTopic[caseGroup.topic] = []
+    }
+    casesByTopic[caseGroup.topic].push(caseGroup)
+  })
+
+  return casesByTopic
+}
+
+async function generateSBAMock(
+  allQuestions: Question[],
+  mockNumber: number,
+  config: PhaseMockConfig
+): Promise<void> {
+  const byTopic: Record<string, Question[]> = {}
+  allQuestions.forEach(question => {
+    if (!byTopic[question.topic]) byTopic[question.topic] = []
+    byTopic[question.topic].push(question)
+  })
+
+  const selected = Object.keys(byTopic).flatMap(topic =>
+    selectRotatedItems(byTopic[topic] ?? [], config.getSBACount(topic), mockNumber).map(question => question.id)
+  )
+  const finalIds = shuffle(selected)
+
   const mock = {
-    id: `sba_mock_${String(mockNumber).padStart(3, '0')}`,
-    name: `SBA Mock Paper ${mockNumber}`,
-    type: 'sba',
+    id: `${config.phase}_sba_mock_${String(mockNumber).padStart(3, '0')}`,
+    name: `${config.label} SBA Mock Paper ${mockNumber}`,
+    type: 'sba' as const,
+    section: config.phase,
     question_ids: finalIds,
     total_questions: finalIds.length,
     time_seconds: finalIds.length * 72,
-    is_active: true
-  };
+    is_active: true,
+  }
 
-  await supabase.from('mocks').upsert(mock);
-  console.log(`✅ SBA Mock ${mockNumber} (${finalIds.length} Qs)`);
+  await supabase.from('mocks').upsert(mock)
+  console.log(`✅ ${config.label} SBA Mock ${mockNumber} (${finalIds.length} Qs)`)
 }
 
-async function generateSAQMock(allSAQs: Question[], mockNumber: number): Promise<void> {
-  const cases: Record<string, { topic: string; ids: string[]; totalMarks: number }> = {};
-  allSAQs.forEach(q => {
-    const caseId = q.id.split('_').slice(0, 2).join('_');
-    if (!cases[caseId]) cases[caseId] = { topic: q.topic, ids: [], totalMarks: 0 };
-    cases[caseId].ids.push(q.id);
-    cases[caseId].totalMarks += (q.marks ?? 0);
-  });
+async function generateSAQMock(
+  allSAQs: Question[],
+  mockNumber: number,
+  config: PhaseMockConfig
+): Promise<void> {
+  const casesByTopic = buildCasesByTopic(allSAQs)
+  const selectedCases = config.selectSAQCases(casesByTopic, mockNumber)
 
-  const casesByTopic: Record<string, typeof cases[string][]> = {};
-  Object.values(cases).forEach(c => {
-  if (SAQ_EXCLUDED_TOPICS.some(ex => c.topic.includes(ex))) return; // 
-  if (!casesByTopic[c.topic]) casesByTopic[c.topic] = [];
-  casesByTopic[c.topic].push(c);
-});
-
-  const selectedIds: string[] = [];
-  let totalMarks = 0;
-  let caseCount = 0;
-
-  // 1. High Yield
-  for (const hy of SAQ_HIGH_YIELD) {
-    const key = Object.keys(casesByTopic).find(t => t.includes(hy));
-    if (!key) continue;
-    const pool = casesByTopic[key];
-    const picked = pool[(mockNumber - 1) % pool.length];
-    selectedIds.push(...picked.ids);
-    totalMarks += picked.totalMarks;
-    caseCount++;
-  }
-
-  // 2. Others
-  const otherTopics = Object.keys(casesByTopic).filter(t => !SAQ_HIGH_YIELD.some(hy => t.includes(hy))).sort();
-  const offset = (mockNumber - 1) * SAQ_OTHER_COUNT;
-  for (let i = 0; i < SAQ_OTHER_COUNT; i++) {
-    const topic = otherTopics[(offset + i) % otherTopics.length];
-    if (!topic) continue;
-    const pool = casesByTopic[topic];
-    const picked = pool[Math.floor((offset + i) / otherTopics.length) % pool.length];
-    selectedIds.push(...picked.ids);
-    totalMarks += picked.totalMarks;
-    caseCount++;
-  }
+  const selectedIds = selectedCases.flatMap(caseGroup => caseGroup.ids)
+  const totalMarks = selectedCases.reduce((sum, caseGroup) => sum + caseGroup.totalMarks, 0)
 
   const mock = {
-    id: `saq_mock_${String(mockNumber).padStart(3, '0')}`,
-    name: `SAQ Mock Paper ${mockNumber}`,
-    type: 'saq',
+    id: `${config.phase}_saq_mock_${String(mockNumber).padStart(3, '0')}`,
+    name: `${config.label} SAQ Mock Paper ${mockNumber}`,
+    type: 'saq' as const,
+    section: config.phase,
     question_ids: selectedIds,
     total_marks: totalMarks,
     total_questions: selectedIds.length,
     time_seconds: totalMarks * 75,
-    is_active: true
-  };
+    is_active: true,
+  }
 
-  await supabase.from('mocks').upsert(mock);
-  console.log(`✅ SAQ Mock ${mockNumber} (${totalMarks} marks, ${caseCount} cases)`);
+  await supabase.from('mocks').upsert(mock)
+  console.log(`✅ ${config.label} SAQ Mock ${mockNumber} (${totalMarks} marks, ${selectedCases.length} cases)`)
+}
+
+async function generatePhaseMocks(config: PhaseMockConfig): Promise<void> {
+  const sbaData = shuffle(await fetchAll(config.sbaTable, 'id, topic, subtopic'))
+  const saqData = shuffle(await fetchAll(config.saqTable, 'id, topic, subtopic, marks'))
+
+  const sbaTopicCounts: Record<string, number> = {}
+  sbaData.forEach(question => {
+    sbaTopicCounts[question.topic] = (sbaTopicCounts[question.topic] || 0) + 1
+  })
+
+  const maxSBAMocks = config.getSBALimit(sbaTopicCounts)
+  config.logSBACapacity(sbaTopicCounts, maxSBAMocks)
+
+  const casesByTopic = buildCasesByTopic(saqData)
+  const maxSAQMocks = config.getSAQLimit(casesByTopic)
+  config.logSAQCapacity(casesByTopic, maxSAQMocks)
+
+  const totalMockIterations = Math.max(maxSBAMocks, maxSAQMocks)
+  console.log(`Generating ${config.label} mocks (${totalMockIterations} iterations)...`)
+
+  for (let index = 1; index <= totalMockIterations; index++) {
+    if (index <= maxSBAMocks) await generateSBAMock(sbaData, index, config)
+    if (index <= maxSAQMocks) await generateSAQMock(saqData, index, config)
+  }
 }
 
 async function main() {
   try {
-    const sbaData = await fetchAll('questions', 'id, topic, subtopic');
-    const saqData = await fetchAll('saq_questions', 'id, topic, subtopic, marks');
-
-    // Calculate Limits
-    const sbaCounts: Record<string, number> = {};
-    sbaData.forEach(q => sbaCounts[q.topic] = (sbaCounts[q.topic] || 0) + 1);
-    const maxSBAMocks = Math.min(...Object.keys(sbaCounts).map(t => Math.floor(sbaCounts[t] / (SBA_HIGH_YIELD.some(hy => t.includes(hy)) ? SBA_HIGH_YIELD_COUNT : SBA_DEFAULT_COUNT))));
-console.log('\n📊 SBA Topic Capacity:');
-const sbaCapacity = Object.keys(sbaCounts).map(t => {
-  const isHighYield = SBA_HIGH_YIELD.some(hy => t.includes(hy));
-  const required = isHighYield ? SBA_HIGH_YIELD_COUNT : SBA_DEFAULT_COUNT;
-  const capacity = Math.floor(sbaCounts[t] / required);
-  return { topic: t, questions: sbaCounts[t], required, capacity };
-});
-sbaCapacity
-  .sort((a, b) => a.capacity - b.capacity)
-  .forEach(({ topic, questions, required, capacity }) =>
-    console.log(`  ${capacity === maxSBAMocks ? '🔴' : '  '} ${topic}: ${questions}q ÷ ${required} = ${capacity} mocks`)
-  );
-console.log(`  → SBA limit: ${maxSBAMocks} mocks\n`);
-    const saqCaseCounts: Record<string, number> = {};
-    const seen = new Set<string>();
-    saqData.forEach(q => {
-  const cid = q.id.split('_').slice(0, 2).join('_');
-  if (!seen.has(cid) && !SAQ_EXCLUDED_TOPICS.some(ex => q.topic.includes(ex))) { 
-    saqCaseCounts[q.topic] = (saqCaseCounts[q.topic] || 0) + 1;
-    seen.add(cid);
+    await generatePhaseMocks(PHASE_CONFIG)
+  } catch (error) {
+    console.error(error)
   }
-});
-    const hyLimits = SAQ_HIGH_YIELD.map(hy => saqCaseCounts[Object.keys(saqCaseCounts).find(t => t.includes(hy))!] || 0);
-    const otherTotal = Object.keys(saqCaseCounts).filter(t => !SAQ_HIGH_YIELD.some(hy => t.includes(hy))).reduce((s, t) => s + saqCaseCounts[t], 0);
-    const maxSAQMocks = Math.min(...hyLimits, Math.floor(otherTotal / SAQ_OTHER_COUNT));
-console.log('📊 SAQ Topic Capacity:');
-SAQ_HIGH_YIELD.forEach(hy => {
-  const key = Object.keys(saqCaseCounts).find(t => t.includes(hy));
-  const caseCount = key ? saqCaseCounts[key] : 0;
-  console.log(`  ${caseCount === Math.min(...hyLimits) ? '🔴' : '  '} [HY] ${hy}: ${caseCount} cases = ${caseCount} mocks`);
-});
-
-
-console.log(`  ${Math.floor(otherTotal / SAQ_OTHER_COUNT) === maxSAQMocks ? '🔴' : '  '} [Other] ${otherTotal} cases ÷ ${SAQ_OTHER_COUNT} per paper = ${Math.floor(otherTotal / SAQ_OTHER_COUNT)} mocks`);
-console.log(`  → SAQ limit: ${maxSAQMocks} mocks\n`);
-    const FINAL_COUNT = Math.max(maxSBAMocks, maxSAQMocks);
-    console.log(`Generating ${FINAL_COUNT} mocks...`);
-
-    const sbaPool = shuffle(sbaData);
-    const saqPool = shuffle(saqData);
-
-    for (let i = 1; i <= FINAL_COUNT; i++) {
-      if (i <= maxSBAMocks) await generateSBAMock(sbaPool, i);
-      if (i <= maxSAQMocks) await generateSAQMock(saqPool, i);
-    }
-  } catch (e) { console.error(e); }
 }
 
-main();
+main()

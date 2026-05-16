@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import KawaiiLayout from '@/components/KawaiiLayout'
 import TopicSelector from '@/components/TopicSelector'
 import ModeSelector from '@/components/ModeSelector'
-import { selectQuestions } from '@/lib/questionUtils'
+import { selectQuestions, selectSAQCases } from '@/lib/questionUtils'
 import MockSelector from '@/components/MockSelector'
 import { useQuizSession } from '@/lib/quizSession'
 import { supabase } from '@/lib/supabase'
@@ -40,11 +40,6 @@ export default function Dashboard() {
   const totalSelected = Object.values(selections)
     .flatMap(s => Object.values(s))
     .reduce((a, b) => a + b, 0)
-
-  const shuffle = (arr: any[]) => [...arr].sort(() => Math.random() - 0.5)
-
-  // FIX 5: getCaseId moved up so both SAQ functions can use it
-  const getCaseId = (id: string) => id.replace(/_Q\d+$/, '')
 
   // ── Shared helper: get selected topic keys ─────────────────────────────────
   const getSelectedTopics = () =>
@@ -110,20 +105,7 @@ export default function Dashboard() {
 
       if (meta.length === 0) { setError('Failed to fetch SAQs'); return }
 
-      // Build case map and select cases using lightweight metadata.
-      const caseMap: Record<string, typeof meta> = {}
-      for (const q of meta) {
-        const caseId = getCaseId(q.id)
-        if (!caseMap[caseId]) caseMap[caseId] = []
-        caseMap[caseId].push(q)
-      }
-
-      const caseCount = totalSelected
-      const selectedCases = shuffle(Object.values(caseMap)).slice(0, caseCount)
-      const selectedIds = selectedCases
-        .flat()
-        .sort((a, b) => a.id.localeCompare(b.id))
-        .map(q => q.id)
+      const selectedIds = selectSAQCases(meta as any, selections).map(q => q.id)
 
       if (selectedIds.length === 0) { setError('No SAQ questions match your selection.'); return }
 
@@ -192,8 +174,9 @@ export default function Dashboard() {
 
       if (metaError || !meta) { setError('Failed to fetch questions for export.'); return }
 
-      const selectedMeta = await selectQuestions(meta as any, { selections, seenMode })
-      const selectedIds  = selectedMeta.map((q: any) => q.id)
+      const selectedIds = questionType === 'saq'
+        ? selectSAQCases(meta as any, selections).map((q: any) => q.id)
+        : (await selectQuestions(meta as any, { selections, seenMode })).map((q: any) => q.id)
 
       // Phase 2: fetch only the columns the PDF renderer actually needs,
       // and only for the selected IDs. No select('*') pulling unused fields.
