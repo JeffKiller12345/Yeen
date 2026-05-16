@@ -1,5 +1,6 @@
 import type { Question } from '@/types'
 import { getSeenIds } from '@/lib/seenTracker'
+import { getSAQCaseId } from '@/lib/saqCases'
 
 interface LocalSelectionConfig {
   selections: Record<string, Record<string, number>>
@@ -15,10 +16,6 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-export function getSAQCaseId(id: string): string {
-  return String(id).replace(/_Q\d+$/, '')
-}
-
 export function selectSAQCases<T extends Pick<Question, 'id' | 'topic' | 'subtopic'>>(
   bank: T[],
   selections: Record<string, Record<string, number>>
@@ -27,7 +24,7 @@ export function selectSAQCases<T extends Pick<Question, 'id' | 'topic' | 'subtop
   const caseMap = new Map<string, T[]>()
 
   for (const question of bank) {
-    const caseId = getSAQCaseId(String(question.id))
+    const caseId = getSAQCaseId(question.id)
     const existing = caseMap.get(caseId)
 
     if (existing) {
@@ -46,9 +43,8 @@ export function selectSAQCases<T extends Pick<Question, 'id' | 'topic' | 'subtop
       casesByTopic[topic] = []
     }
 
-    casesByTopic[topic].push(
-      [...questions].sort((a, b) => String(a.id).localeCompare(String(b.id)))
-    )
+    questions.sort((a, b) => a.id.localeCompare(b.id))
+    casesByTopic[topic].push(questions)
   }
 
   const result: T[] = []

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import * as dotenv from 'dotenv'
 import path from 'path'
+import { getSAQCaseId } from '../lib/saqCases'
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 
@@ -141,10 +142,6 @@ function selectRotatedItems<T>(pool: T[], count: number, mockNumber: number): T[
   return rotated.slice(0, Math.min(count, pool.length))
 }
 
-function getCaseId(id: string): string {
-  return String(id).replace(/_Q\d+$/, '')
-}
-
 async function fetchAll(table: string, columns: string): Promise<Question[]> {
   let allData: Question[] = []
   let from = 0
@@ -169,7 +166,7 @@ function buildCasesByTopic(allSAQs: Question[], excludedTopics: string[] = []): 
   allSAQs.forEach(question => {
     if (excludedTopics.some(excludedTopic => question.topic.includes(excludedTopic))) return
 
-    const caseId = getCaseId(question.id)
+    const caseId = getSAQCaseId(question.id)
     if (!cases[caseId]) {
       cases[caseId] = {
         caseId,
@@ -270,10 +267,10 @@ async function generatePhaseMocks(config: PhaseMockConfig): Promise<void> {
   const maxSAQMocks = config.getSAQLimit(casesByTopic)
   config.logSAQCapacity(casesByTopic, maxSAQMocks)
 
-  const finalCount = Math.max(maxSBAMocks, maxSAQMocks)
-  console.log(`Generating ${config.label} mocks (${finalCount} iterations)...`)
+  const totalMockIterations = Math.max(maxSBAMocks, maxSAQMocks)
+  console.log(`Generating ${config.label} mocks (${totalMockIterations} iterations)...`)
 
-  for (let index = 1; index <= finalCount; index++) {
+  for (let index = 1; index <= totalMockIterations; index++) {
     if (index <= maxSBAMocks) await generateSBAMock(sbaData, index, config)
     if (index <= maxSAQMocks) await generateSAQMock(saqData, index, config)
   }
