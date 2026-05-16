@@ -22,22 +22,28 @@ function isMissingSectionColumnError(error: { code?: string; message?: string } 
   return typeof error.message === 'string' && /section/i.test(error.message)
 }
 
+const PHASE_MATCHERS = (Object.entries(PHASE_CONFIG) as [StudentPhase, (typeof PHASE_CONFIG)[StudentPhase]][]).map(([phase, config]) => {
+  const escapedLabel = config.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return {
+    phase,
+    section: config.mockSection,
+    idPrefix: `${config.mockSection}_`,
+    labelPattern: new RegExp(`^${escapedLabel}(?:\\s|:|$)`, 'i'),
+  }
+})
+
 function inferMockPhase(mock: Partial<Mock>): StudentPhase | null {
-  for (const [phase, config] of Object.entries(PHASE_CONFIG) as [StudentPhase, (typeof PHASE_CONFIG)[StudentPhase]][]) {
-    if (mock.section === config.mockSection) {
-      return phase
+  for (const matcher of PHASE_MATCHERS) {
+    if (mock.section === matcher.section) {
+      return matcher.phase
     }
 
-    if (typeof mock.id === 'string' && mock.id.startsWith(`${config.mockSection}_`)) {
-      return phase
+    if (typeof mock.id === 'string' && mock.id.startsWith(matcher.idPrefix)) {
+      return matcher.phase
     }
 
-    if (typeof mock.name === 'string') {
-      const escapedLabel = config.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      const labelPattern = new RegExp(`^${escapedLabel}(?:\\s|:|$)`, 'i')
-      if (labelPattern.test(mock.name)) {
-        return phase
-      }
+    if (typeof mock.name === 'string' && matcher.labelPattern.test(mock.name)) {
+      return matcher.phase
     }
   }
 
@@ -82,7 +88,7 @@ export async function fetchMocks(phase: StudentPhase, type?: 'sba' | 'saq'): Pro
     .filter(m => {
       const inferredPhase = inferMockPhase(m)
       if (inferredPhase === null) {
-        console.warn(`Skipping mock with unrecognised phase: ${m.id ?? m.name ?? 'unknown mock'}`)
+        console.warn(`Skipping mock with unrecognized phase: ${m.id ?? m.name ?? 'unknown mock'}`)
         return false
       }
       return inferredPhase === phase
