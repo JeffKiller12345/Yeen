@@ -22,6 +22,34 @@ function isMissingSectionColumnError(error: { code?: string; message?: string } 
   return typeof error.message === 'string' && /section/i.test(error.message)
 }
 
+const PHASE_MATCHERS = (Object.entries(PHASE_CONFIG) as [StudentPhase, (typeof PHASE_CONFIG)[StudentPhase]][]).map(([phase, config]) => {
+  const escapedLabel = config.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return {
+    phase,
+    section: config.mockSection,
+    idPrefix: `${config.mockSection}_`,
+    labelPattern: new RegExp(`^${escapedLabel}(?:\\s|:|$)`, 'i'),
+  }
+})
+
+function inferMockPhase(mock: Partial<Mock>): StudentPhase | null {
+  for (const matcher of PHASE_MATCHERS) {
+    if (mock.section === matcher.section) {
+      return matcher.phase
+    }
+
+    if (typeof mock.id === 'string' && mock.id.startsWith(matcher.idPrefix)) {
+      return matcher.phase
+    }
+
+    if (typeof mock.name === 'string' && matcher.labelPattern.test(mock.name)) {
+      return matcher.phase
+    }
+  }
+
+  return null
+}
+
 export async function fetchMocks(phase: StudentPhase, type?: 'sba' | 'saq'): Promise<Mock[]> {
   const section = PHASE_CONFIG[phase].mockSection
   // Build query dynamically
@@ -56,14 +84,23 @@ export async function fetchMocks(phase: StudentPhase, type?: 'sba' | 'saq'): Pro
     return []
   }
 
-  return (data ?? []).map(m => ({
+  return (data ?? [])
+    .filter(m => {
+      const inferredPhase = inferMockPhase(m)
+      if (inferredPhase === null) {
+        console.warn(`Skipping mock with unrecognized phase: ${m.id ?? m.name ?? 'unknown mock'}`)
+        return false
+      }
+      return inferredPhase === phase
+    })
+    .map(m => ({
     ...m,
     // JSON columns in Supabase usually return as objects/arrays automatically, 
     // but this check keeps it robust against stringified storage.
     question_ids: Array.isArray(m.question_ids) 
       ? m.question_ids 
       : JSON.parse(m.question_ids || '[]')
-  }))
+    }))
 }
 
 export async function loadSBAMock(mock: Mock, phase: StudentPhase): Promise<Question[]> {
