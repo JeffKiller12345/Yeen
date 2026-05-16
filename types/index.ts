@@ -73,7 +73,7 @@ export interface SAQQuestion {
   topic: string
   subtopic: string
   case_context: string
-  additional_context: string
+  additional_context: string | null
   question: string
   marks: number
   acceptable_answers: string[]

@@ -8,7 +8,7 @@ const cache: Record<string, CacheEntry> = {}
 const TTL = Infinity
 
 export async function getCachedTopicMeta(
-  table: 'questions' | 'medical_questions' | 'saq_questions'
+  table: 'questions' | 'medical_questions' | 'saq_questions' | 'phase1saq'
 ): Promise<{ id: string; topic: string; subtopic: string }[]> {
   const now = Date.now()
   if (cache[table] && now - cache[table].fetchedAt < TTL) {
