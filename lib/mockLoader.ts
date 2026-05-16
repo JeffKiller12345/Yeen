@@ -33,8 +33,8 @@ function inferMockPhase(mock: Partial<Mock>): StudentPhase | null {
   }
 
   if (typeof mock.name === 'string') {
-    if (/^phase 1\b/i.test(mock.name)) return 'phase1'
-    if (/^phase 2a\b/i.test(mock.name)) return 'phase2a'
+    if (/^phase 1(?:\s|:|$)/i.test(mock.name)) return 'phase1'
+    if (/^phase 2a(?:\s|:|$)/i.test(mock.name)) return 'phase2a'
   }
 
   return null
@@ -77,7 +77,7 @@ export async function fetchMocks(phase: StudentPhase, type?: 'sba' | 'saq'): Pro
   return (data ?? [])
     .filter(m => {
       const inferredPhase = inferMockPhase(m)
-      return inferredPhase === null || inferredPhase === phase
+      return inferredPhase === phase
     })
     .map(m => ({
     ...m,
