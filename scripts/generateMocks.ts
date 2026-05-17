@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import * as dotenv from 'dotenv'
 import path from 'path'
-import { getSAQCaseId } from '../lib/saqCases'
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 
@@ -202,7 +201,7 @@ const PHASE1_CONFIG: PhaseMockConfig = {
   label: 'Phase 1',
   sbaTable: 'medical_questions',
   saqTable: 'phase1saq',
-  getCaseId: getSAQCaseId,
+  getCaseId: (id: string) => id.replace(/_q\d+$/i, ''),
 
   getSBACount(topic) {
     return PHASE1_SHORT_SBA_TOPICS.some(s => topic.startsWith(s)) ? 5 : 10
