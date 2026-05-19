@@ -64,8 +64,6 @@ export async function fetchMocks(phase: StudentPhase, type?: 'sba' | 'saq'): Pro
   }
 
   let { data, error } = await request.order('name')
-  console.log('Raw mocks from DB:', data)
-  console.log('Fetch error:', error)
   const shouldFallbackToLegacyMocks = isMissingSectionColumnError(error)
 
   if (shouldFallbackToLegacyMocks) {
