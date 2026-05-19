@@ -124,17 +124,18 @@ async function generateSBAMock(
   const finalIds = shuffle(selected)
 
   const mock = {
-    id: `${config.phase}_sba_mock_${String(mockNumber).padStart(3, '0')}`,
-    name: `${config.label} SBA Mock Paper ${mockNumber}`,
-    type: 'sba' as const,
-    section: config.phase,
-    question_ids: finalIds,
+  id: `${config.phase}_sba_mock_${String(mockNumber).padStart(3, '0')}`,
+  name: `${config.label} SBA Mock Paper ${mockNumber}`,
+  type: 'sba' as const,
+  section: config.phase,
+  question_ids: JSON.stringify(finalIds),
     total_questions: finalIds.length,
     time_seconds: finalIds.length * 72,
     is_active: true,
   }
 
-  await supabase.from('mocks').upsert(mock)
+  const { error } = await supabase.from('mocks').upsert(mock)
+if (error) throw new Error(`Upsert failed for ${mock.id}: ${JSON.stringify(error)}`)
   console.log(`✅ ${config.label} SBA Mock ${mockNumber} (${finalIds.length} Qs)`)
 }
 
@@ -154,14 +155,15 @@ async function generateSAQMock(
     name: `${config.label} SAQ Mock Paper ${mockNumber}`,
     type: 'saq' as const,
     section: config.phase,
-    question_ids: selectedIds,
+    question_ids: JSON.stringify(selectedIds),
     total_marks: totalMarks,
     total_questions: selectedIds.length,
     time_seconds: totalMarks * 75,
     is_active: true,
   }
 
-  await supabase.from('mocks').upsert(mock)
+  const { error } = await supabase.from('mocks').upsert(mock)
+if (error) throw new Error(`Upsert failed for ${mock.id}: ${JSON.stringify(error)}`)
   console.log(`✅ ${config.label} SAQ Mock ${mockNumber} (${totalMarks} marks, ${selectedCases.length} cases)`)
 }
 
