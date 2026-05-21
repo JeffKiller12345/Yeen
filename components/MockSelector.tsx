@@ -153,13 +153,18 @@ export default function MockSelector({ studentPhase }: Props) {
                 </button>
 
                 <button
-                  className="btn-kawaii"
-                  style={{ fontSize: '7px', padding: '10px' }}
-                  onClick={() => exportMock(mock)}
-                  disabled={launching === mock.id || exporting === mock.id}
-                  title="Export as PDF"
-                >
-                  {exporting === mock.id ? '...' : '⬇️'}
+  className="btn-kawaii"
+  style={{ fontSize: '7px', padding: '10px 12px', lineHeight: 0 }}  // add lineHeight: 0
+  onClick={() => exportMock(mock)}
+  disabled={launching === mock.id || exporting === mock.id}
+  title="Export as PDF"
+>
+                  {exporting === mock.id ? '...' : (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3v13M5 13l7 7 7-7"/>
+    <line x1="3" y1="21" x2="21" y2="21"/>
+  </svg>
+)}
                 </button>
               </div>
             </div>
