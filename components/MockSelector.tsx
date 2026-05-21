@@ -159,7 +159,7 @@ export default function MockSelector({ studentPhase }: Props) {
                   disabled={launching === mock.id || exporting === mock.id}
                   title="Export as PDF"
                 >
-                  {exporting === mock.id ? '...' : '⬇'}
+                  {exporting === mock.id ? '...' : '⬇️'}
                 </button>
               </div>
             </div>

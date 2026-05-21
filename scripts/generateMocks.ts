@@ -195,7 +195,7 @@ async function generatePhaseMocks(config: PhaseMockConfig): Promise<void> {
 
 // ─── Phase 1 config ───────────────────────────────────────────────────────────
 
-const PHASE1_SHORT_SBA_TOPICS = ['H. Prescribing', 'J. Critical Numbers']
+const PHASE1_SHORT_SBA_TOPICS = ['prescribing', 'critical numbers'] // Lowercase for safe matching
 const PHASE1_SAQ_TARGET_CASES = 12
 
 const PHASE1_CONFIG: PhaseMockConfig = {
@@ -206,20 +206,24 @@ const PHASE1_CONFIG: PhaseMockConfig = {
   getCaseId: (id: string) => id.replace(/_q\d+$/i, ''),
 
   getSBACount(topic) {
-    return PHASE1_SHORT_SBA_TOPICS.some(s => topic.startsWith(s)) ? 5 : 10
+    // Check if the lowercase topic includes any of our short topics
+    const isShortTopic = PHASE1_SHORT_SBA_TOPICS.some(s => topic.toLowerCase().includes(s))
+    return isShortTopic ? 5 : 10
   },
 
   getSBALimit(topicCounts) {
-    const capacities = Object.keys(topicCounts).map(topic =>
-      Math.floor(topicCounts[topic] / (PHASE1_SHORT_SBA_TOPICS.some(s => topic.startsWith(s)) ? 5 : 10))
-    )
+    const capacities = Object.keys(topicCounts).map(topic => {
+      const isShortTopic = PHASE1_SHORT_SBA_TOPICS.some(s => topic.toLowerCase().includes(s))
+      return Math.floor(topicCounts[topic] / (isShortTopic ? 5 : 10))
+    })
     return capacities.length > 0 ? Math.min(...capacities) : 0
   },
 
   logSBACapacity(topicCounts, maxMocks) {
     console.log('\n📊 Phase 1 SBA Topic Capacity:')
     const rows = Object.keys(topicCounts).map(topic => {
-      const required = PHASE1_SHORT_SBA_TOPICS.some(s => topic.startsWith(s)) ? 5 : 10
+      const isShortTopic = PHASE1_SHORT_SBA_TOPICS.some(s => topic.toLowerCase().includes(s))
+      const required = isShortTopic ? 5 : 10
       const capacity = Math.floor(topicCounts[topic] / required)
       return { topic, questions: topicCounts[topic], required, capacity }
     })
