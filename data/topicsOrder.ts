@@ -1,4 +1,19 @@
-export const TOPIC_ORDER = [
+// @/data/topicsOrder.ts
+
+export const TOPIC_ORDER: string[] = [
+  // Phase 1
+  "A. Introduction to Medicine and Medical Science (IMMS)",
+  "B. Cardiovascular system",
+  "C. Respiratory system",
+  "D. Gastrointestinal tract and liver (GI-L)",
+  "E. Neuroscience",
+  "F. Skin, UroGenital, Endocrine and Reproduction (SUGER)",
+  "G. Musculoskeletal (MSK)",
+  "H. Prescribing",
+  "I. Public health",
+  "J. Critical numbers",
+  "K. Early Years General Practice (EYGP)",
+  // Phase 2a
   "Pathology",
   "Immunology",
   "Pharmacology and Prescribing",
@@ -14,10 +29,137 @@ export const TOPIC_ORDER = [
   "Urology and Renal Medicine",
   "Gastrointestinal and Hepatic Medicine",
   "Teaching Theme – Phase 2a Early Years GP (EYGP) Programme",
-  "Teaching Theme – Phase 2a ILA Programme"
+  "Teaching Theme – Phase 2a ILA Programme",
 ]
 
 export const TOPICS_ORDER: Record<string, string[]> = {
+
+  // ── Phase 1 ──────────────────────────────────────────────────────────────
+
+  "A. Introduction to Medicine and Medical Science (IMMS)": [
+    "Genetics",
+    "Cell biology",
+    "Energy metabolism / Biochemistry",
+    "Embryo development from fertilisation to week 9",
+    "Cell histology and their ultrastructural components",
+    "Introduction to anatomical features of the human body",
+    "ILA 1 - Cystic Fibrosis",
+  ],
+
+  "B. Cardiovascular system": [
+    "Principle features of haematology",
+    "Physiological features of the cardiovascular system",
+    "Embryonic development of the heart and circulation",
+    "Histology of the cardiovascular system",
+    "Anatomical features of the cardiovascular system",
+    "ILA 2 - Myocardial Infarction",
+  ],
+
+  "C. Respiratory system": [
+    "Physiological features of the respiratory system",
+    "Immune features of the respiratory system",
+    "Lungs in wild environments",
+    "Genetic and environmental lung influences",
+    "Allergy, hypersensitivity and the lung",
+    "First breath",
+    "Embryonic development of the respiratory system",
+    "Histology of the respiratory system",
+    "Anatomical features of the respiratory system / thorax",
+    "ILA 3 - Heart Failure",
+    "ILA 4 - Chronic Obstructive Pulmonary Disease",
+  ],
+
+  "D. Gastrointestinal tract and liver (GI-L)": [
+    "Physiological features of the gut",
+    "Physiological features of the liver, gallbladder and pancreas",
+    "Embryonic development of the gastrointestinal tract and liver",
+    "Histology of the gastrointestinal tract and liver",
+    "Anatomical features of the gastrointestinal tract and liver, and abdomen",
+    "ILA 5 - Gastritis and Appendicitis",
+  ],
+
+  "E. Neuroscience": [
+    "Neuroanatomy",
+    "Neurophysiology",
+    "Psychiatry and psychological & sociological principles in behavioural neuroscience",
+    "Neurohistology",
+    "ILA 6 - Stroke",
+    "ILA 7 - Vestibular Schwannoma",
+  ],
+
+  "F. Skin, UroGenital, Endocrine and Reproduction (SUGER)": [
+    "Physiological features of the renal and urinary system",
+    "Physiological features of the reproductive system",
+    "Physiological features of the endocrine system",
+    "Physiological features of the skin",
+    "Embryonic development of the urogenital and reproductive organs",
+    "Histology of SUGER",
+    "Anatomical features of the urogenital and pelvic organs",
+    "ILA 8 - Dehydration and Acute Kidney Injury",
+    "ILA 9 - Subfertility",
+  ],
+
+  "G. Musculoskeletal (MSK)": [
+    "Intro",
+    "Bone",
+    "Joints",
+    "Muscle",
+    "Exercise",
+    "Biochemistry/homeostasis",
+    "Histology",
+    "ILA 10 - Distal Radius Fracture",
+  ],
+
+  "H. Prescribing": [
+    "Use of FP10 prescriptions in Primary Care (linked to 'Generalism and holistic patient care' - EYGP session 1)",
+    "Legal restrictions around prescribing (linked to 'Pregnancy' - EYGP session 2)",
+    "Routes of drug administration and medicine formulations (linked to 'Ischaemic heart disease / Health inequalities' - EYGP session 3)",
+    "Sustainable prescribing (linked to 'Asthma / Sustainable healthcare' - EYGP session 4)",
+    "Non-pharmacological interventions (linked to 'Irritable bowel syndrome (IBS) / Functional disorders' - EYGP session 5)",
+    "Prescribing Controlled Drugs (linked to 'Neurodiversity' - EYGP session 6)",
+    "National processes for medicines management (linked to 'Epilepsy' - EYGP session 7)",
+    "Communication and patient counselling (linked to 'Skin / Fitness to practice' - EYGP session 8)",
+    "Adherence and non-adherence (linked to 'Chronic kidney disease (CKD) / Accessing healthcare for non-English speaking populations' - EYGP session 9)",
+    "Medicines supply chain (linked to 'Menopause' - EYGP session 10)",
+    "Drugs associated with dependence and withdrawal symptoms (linked to 'Osteoarthritis / Chronic pain - EYGP session 11)",
+  ],
+
+  "I. Public health": [
+    "Prevent disease and promote good health",
+    "Address social determinants of health",
+    "Deliver effective and efficient healthcare",
+    "Take an interdisciplinary approach",
+    "Three pillars of public health",
+    "Public health in practice – application of the principles of public health",
+    "Medical sociology",
+    "Behaviour and society",
+    "Public mental health",
+    "Common Mental Health Disorders (CMDs): prevalence, impact, and management",
+  ],
+
+  "J. Critical numbers": [
+    "Quantitative study design",
+    "Summary statistics",
+    "Inferential statistics",
+    "Critical appraisal",
+  ],
+
+  "K. Early Years General Practice (EYGP)": [
+    "Session 1 'Generalism and holistic patient care' (during IMMS block)",
+    "Session 2 'Pregnancy' (during IMMS block)",
+    "Session 3 'Ischaemic heart disease / Health inequalities' (during Cardiovascular block)",
+    "Session 4 'Asthma / Sustainable healthcare' (during Respiratory block)",
+    "Session 5 'Irritable bowel syndrome (IBS) / Functional disorders' (during GI-Liver block)",
+    "Session 6 'Neurodiversity' (during Neurosciences block)",
+    "Session 7 'Epilepsy' (during Neurosciences block)",
+    "Session 8 'Skin / Fitness to practice' (during SUGER block)",
+    "Session 9 'Chronic kidney disease (CKD) / Accessing healthcare for non-English speaking populations.' (during SUGER block)",
+    "Session 10 'Menopause' (during SUGER block)",
+    "Session 11 'Osteoarthritis / Chronic pain' (during MSK block)",
+  ],
+
+  // ── Phase 2a ─────────────────────────────────────────────────────────────
+
   "Pathology": [
     "Describe the nature of disease",
     "Describe the process of acute inflammation",
@@ -31,8 +173,9 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Describe the process of tumour classification",
     "Describe the fundamental aspects of cancer treatments",
     "Describe the processes of tissue healing and repair",
-    "Describe the process of aging and the role of the autopsy in determining cause of death"
+    "Describe the process of aging and the role of the autopsy in determining cause of death",
   ],
+
   "Immunology": [
     "List and describe the function of the main cellular and humoral components of the immune system",
     "Explain the main features of innate and adaptive immunity, the key differences between them, and how they work together to create our immune system",
@@ -40,16 +183,18 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Explain how immunity changes with ageing and the impact of this on our susceptibility to disease",
     "Describe the principles of immunotherapy in the management of cancer and inflammatory diseases",
     "Describe the principles of immunisation and give examples of the different vaccines available and their benefits and drawbacks",
-    "Describe how immunological processes develop and become manifest and the consequences for the major organ systems detailed in Phase 2a"
+    "Describe how immunological processes develop and become manifest and the consequences for the major organ systems detailed in Phase 2a",
   ],
+
   "Pharmacology and Prescribing": [
     "Describe the key features of pharmacodynamics of drug action (the biochemical and physiological effects of drugs)",
     "Describe the key features of pharmacokinetics (the administration and subsequent fate of administered substances) and pharmacogenomics",
     "Describe the mechanism of action and list examples of the following classes of drugs: Cholinergic, Adrenergic, Analgesics (opioids)",
     "Define the following terms and explain their implications for prescribing and clinical management: Adverse drug reactions, Drug interactions",
     "Describe the principles of drug discovery and development",
-    "Prescription Writing Early Years GP Prescribing Tasks"
+    "Prescription Writing Early Years GP Prescribing Tasks",
   ],
+
   "Microbiology": [
     "Describe the biology and classification of micro-organisms",
     "Gram-positive pathogens",
@@ -64,8 +209,9 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Antivirals",
     "Antibiotics",
     "Healthcare-acquired infections",
-    "HIV Symposium"
+    "HIV Symposium",
   ],
+
   "Haematology": [
     "Full blood count",
     "Anaemia",
@@ -74,8 +220,9 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Anticoagulation and thrombosis",
     "Malignant haematology",
     "Blood transfusion",
-    "Haematology emergencies"
+    "Haematology emergencies",
   ],
+
   "Public Health and Population Health Science": [
     "Apply theoretical frameworks of sociology to explain the varied responses of individuals, groups and societies to disease",
     "Explain sociological factors that contribute to illness, the course of the disease and the success of treatment − including issues relating to health inequalities, the links between occupation and health and the effects of poverty and affluence",
@@ -84,8 +231,9 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Critically appraise the results of relevant diagnostic, prognostic and treatment trials and other qualitative and quantitative studies as reported in the medical and scientific literature",
     "Identify appropriate strategies for managing patients with dependence issues and other demonstrations of self-harm",
     "Discuss psychological aspects of behavioural change and treatment compliance",
-    "Apply scientific method and approaches to medical research"
+    "Apply scientific method and approaches to medical research",
   ],
+
   "Respiratory Medicine": [
     "Obstructive lung diseases",
     "Restrictive lung diseases",
@@ -95,8 +243,9 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Community acquired pneumonia",
     "Influenza and pandemics",
     "Occupational health and lung disorders",
-    "Palliative care in respiratory disease"
+    "Palliative care in respiratory disease",
   ],
+
   "Musculoskeletal Medicine (MSK)": [
     "Importance of MSK conditions",
     "Fractures",
@@ -107,8 +256,9 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Soft tissue MSK disorders",
     "Osteoporosis & bone disorders",
     "MSK infections",
-    "Back pain"
+    "Back pain",
   ],
+
   "Diabetes Mellitus and General Endocrinology": [
     "Anatomy and Physiology",
     "Appetite",
@@ -117,8 +267,9 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Diabetes Mellitus – Part 3",
     "Diabetes Mellitus – Part 4",
     "Diabetes Mellitus – Part 5",
-    "Diabetes Mellitus – Part 6"
+    "Diabetes Mellitus – Part 6",
   ],
+
   "General Endocrinology": [
     "Overview - Functional Anatomy and Physiology",
     "Thyroid",
@@ -130,8 +281,9 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Endocrine Hypertension",
     "Parathyroid and Disorders of Calcium Metabolism",
     "Puberty",
-    "Reproductive Endocrinology"
+    "Reproductive Endocrinology",
   ],
+
   "Cardiovascular Medicine": [
     "Anticoagulants and Antiplatelets",
     "Deep Vein Thrombosis (DVT) and Pulmonary Embolism (PE)",
@@ -147,8 +299,9 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Pericarditis",
     "Valvular disease",
     "Structural heart defects",
-    "Infective endocarditis"
+    "Infective endocarditis",
   ],
+
   "Neurology": [
     "Clinically-Oriented Neuroanatomy",
     "Dementia",
@@ -169,8 +322,9 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Motor Neurone Disease",
     "Traumatic brain injury",
     "Hyperkinetic Movement Disorders",
-    "Sensory symptoms"
+    "Sensory symptoms",
   ],
+
   "Urology and Renal Medicine": [
     "Review of Phase 1 kidney anatomy and renal physiology",
     "Fluid balance",
@@ -187,8 +341,9 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Glomerular disease",
     "Acute Kidney Injury (AKI)",
     "Urinary Tract Infection (UTI) and pyelonephritis",
-    "Reconstructive Urology"
+    "Reconstructive Urology",
   ],
+
   "Gastrointestinal and Hepatic Medicine": [
     "Liver disease",
     "Hepatitis",
@@ -203,8 +358,9 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Inflammatory Bowel Disease (IBD)",
     "Functional gut disorders",
     "Peritonitis",
-    "Ascites"
+    "Ascites",
   ],
+
   "Teaching Theme – Phase 2a Early Years GP (EYGP) Programme": [
     "Polypharmacy and Holistic care",
     "Child health surveillance and vaccinations",
@@ -216,14 +372,15 @@ export const TOPICS_ORDER: Record<string, string[]> = {
     "Dementia",
     "Eating Disorders",
     "Lower urinary tract symptoms",
-    "Liver disease, Hepatitis and Sexual health"
+    "Liver disease, Hepatitis and Sexual health",
   ],
+
   "Teaching Theme – Phase 2a ILA Programme": [
     "ILA 11 - Pathology",
     "ILA 12 - Immunology & Pharmacology",
     "ILA 13 - Microbiology",
     "ILA 14 - Endocrinology",
     "ILA 15 - Cardiology & Neurology",
-    "ILA 16 - Renal & Urology"
-  ]
+    "ILA 16 - Renal & Urology",
+  ],
 }
