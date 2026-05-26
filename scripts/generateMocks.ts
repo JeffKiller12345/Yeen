@@ -130,7 +130,7 @@ async function generateSBAMock(
   section: config.phase,
   question_ids: JSON.stringify(finalIds),
     total_questions: finalIds.length,
-    time_seconds: finalIds.length * 72,
+    time_seconds: 9000,
     is_active: true,
   }
 
@@ -158,7 +158,7 @@ async function generateSAQMock(
     question_ids: JSON.stringify(selectedIds),
     total_marks: totalMarks,
     total_questions: selectedIds.length,
-    time_seconds: totalMarks * 75,
+    time_seconds: 7200,
     is_active: true,
   }
 

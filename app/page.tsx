@@ -228,6 +228,25 @@ export default function Dashboard() {
       subtitle="welcome! pick your topics and start studying ♡"
       onSeenReset={() => setSeenResetKey(k => k + 1)}
     >
+    {/* ── Good Luck Banner ── */}
+<div className="goodluck-banner">
+  <img
+    className="banner-gif"
+    src="https://media.giphy.com/media/3oz8xIsloV7zOmt81G/giphy.gif"
+    alt=""
+    aria-hidden="true"
+  />
+  <div className="banner-text">
+    <span className="banner-heading">✿ Good Luck to all the Phase 1s ✿</span>
+    <span className="banner-sub">You got this!!</span>
+  </div>
+  <img
+    className="banner-gif"
+    src="https://media.giphy.com/media/3oz8xIsloV7zOmt81G/giphy.gif"
+    alt=""
+    aria-hidden="true"
+  />
+</div>
       <div className="dashboard">
         <ModeSelector
           examMode={examMode}
@@ -300,6 +319,41 @@ export default function Dashboard() {
         .mock-info { background: var(--cream); border-color: var(--green-mid); box-shadow: 3px 3px 0 var(--green-mid); }
         .mock-info::before { content: '✦ INFO ✦'; background: var(--cream); }
         .info-text { font-family: var(--font-body); font-size: 12px; color: #555; line-height: 1.6; margin: 0; }
+        .goodluck-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: #fff0f6;
+  border: 2.5px solid var(--pink-mid);
+  box-shadow: 4px 4px 0 var(--pink-mid);
+  outline: 2px dashed var(--green-mid);
+  outline-offset: -5px;
+  padding: 12px 16px;
+  text-align: center;
+}
+.banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.banner-heading {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--pink-dark);
+  letter-spacing: 0.1em;
+}
+.banner-sub {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: #c2185b;
+}
+.banner-gif {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  mix-blend-mode: multiply; /* makes white backgrounds transparent-ish */
+}
       `}</style>
     </KawaiiLayout>
   )
