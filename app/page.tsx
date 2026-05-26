@@ -320,6 +320,7 @@ export default function Dashboard() {
         .mock-info::before { content: '✦ INFO ✦'; background: var(--cream); }
         .info-text { font-family: var(--font-body); font-size: 12px; color: #555; line-height: 1.6; margin: 0; }
         .goodluck-banner {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
