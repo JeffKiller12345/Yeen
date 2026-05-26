@@ -232,7 +232,7 @@ export default function Dashboard() {
 <div className="goodluck-banner">
   <img
     className="banner-gif"
-    src="https://tenor.com/bQX0l.gif"
+    src="https://media.tenor.com/nrJ0FfU9WQ0AAAAj/funny.gif"
     alt=""
     aria-hidden="true"
   />
@@ -242,7 +242,7 @@ export default function Dashboard() {
   </div>
   <img
     className="banner-gif"
-    src="https://tenor.com/bQX0l.gif"
+    src="https://media.tenor.com/nrJ0FfU9WQ0AAAAj/funny.gif"
     alt=""
     aria-hidden="true"
   />
