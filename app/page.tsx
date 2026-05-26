@@ -232,17 +232,17 @@ export default function Dashboard() {
 <div className="goodluck-banner">
   <img
     className="banner-gif"
-    src="https://media.giphy.com/media/3oz8xIsloV7zOmt81G/giphy.gif"
+    src="https://tenor.com/bQX0l.gif"
     alt=""
     aria-hidden="true"
   />
   <div className="banner-text">
     <span className="banner-heading">✿ Good Luck to all the Phase 1s ✿</span>
-    <span className="banner-sub">You got this!!</span>
+    <span className="banner-heading">You got this!!</span>
   </div>
   <img
     className="banner-gif"
-    src="https://media.giphy.com/media/3oz8xIsloV7zOmt81G/giphy.gif"
+    src="https://tenor.com/bQX0l.gif"
     alt=""
     aria-hidden="true"
   />
