@@ -237,7 +237,7 @@ export default function Dashboard() {
     aria-hidden="true"
   />
   <div className="banner-text">
-    <span className="banner-heading">✿ Good Luck to all the Phase 1s ✿</span>
+    <span className="banner-heading">✿ Good Luck Everyone ✿</span>
     <span className="banner-heading">You got this!!</span>
   </div>
   <img
