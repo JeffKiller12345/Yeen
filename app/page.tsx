@@ -242,7 +242,7 @@ export default function Dashboard() {
   </div>
   <img
     className="banner-gif"
-    src="https://media.tenor.com/nrJ0FfU9WQ0AAAAj/funny.gif"
+    src="https://i.pinimg.com/originals/35/1c/8a/351c8a0fbabdc2196e3e1542e5335c2f.gif"
     alt=""
     aria-hidden="true"
   />
