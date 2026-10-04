@@ -29,7 +29,8 @@ const MAX_SAQ_EXPORT_LIMIT = 20
 
 function parseAcceptableAnswers(value: SAQRow['acceptable_answers']): string[] {
   if (typeof value === 'string') {
-    return JSON.parse(value) as string[]
+    const parsedValue: unknown = JSON.parse(value)
+    return Array.isArray(parsedValue) ? parsedValue.map(String) : []
   }
 
   return value
