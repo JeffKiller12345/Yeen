@@ -61,26 +61,32 @@ export default function ModeSelector({
         </div>
 
         {/* Question type */}
-        <div className="mode-row">
-          <div className="mode-info">
-            <span className="mode-name">Student Phase</span>
-            <span className="mode-desc">Choose your year group</span>
-          </div>
-          <div className="pill-toggle">
-            <button
-              className={`pill ${studentPhase === 'phase2a' ? 'active' : ''}`}
-              onClick={() => onStudentPhaseChange('phase2a')}
-            >
-              Phase 2a
-            </button>
-            <button
-              className={`pill ${studentPhase === 'phase1' ? 'active' : ''}`}
-              onClick={() => onStudentPhaseChange('phase1')}
-            >
-              Phase 1
-            </button>
-          </div>
-        </div>
+<div className="mode-row">
+  <div className="mode-info">
+    <span className="mode-name">Student Phase</span>
+    <span className="mode-desc">Choose your year group</span>
+  </div>
+  <div className="pill-toggle">
+    <button
+      className={`pill ${studentPhase === 'phase1' ? 'active' : ''}`}
+      onClick={() => onStudentPhaseChange('phase1')}
+    >
+      Phase 1
+    </button>
+    <button
+      className={`pill ${studentPhase === 'phase2a' ? 'active' : ''}`}
+      onClick={() => onStudentPhaseChange('phase2a')}
+    >
+      Phase 2a
+    </button>
+    <button
+      className={`pill ${studentPhase === 'phase2b' ? 'active' : ''}`}
+      onClick={() => onStudentPhaseChange('phase2b')}
+    >
+      Phase 2b
+    </button>
+  </div>
+</div>
 
         <div className="mode-row">
           <div className="mode-info">
