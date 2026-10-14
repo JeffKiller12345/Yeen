@@ -1,4 +1,4 @@
-export type StudentPhase = 'phase2a' | 'phase1'
+export type StudentPhase = 'phase1' | 'phase2a' | 'phase2b';
 
 export interface PhaseConfig {
   label: string
