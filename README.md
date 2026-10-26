@@ -6,6 +6,13 @@ A medical quiz platform for Pre-Clinical Medical Students at the University of S
 
 
 ![Screenshot from website](public/images/examplescreenshot1.png)
+
+## Future Directions
+
+- **OSCE Simulator** — OSCE simulator emulating exam environment with QR code scannable information for candidates, patients and examiners
+- **Report questions** — Allows incorrect questions to be tagged by community and subsequently removed and replaced, keeps quality of questions high
+
+
 ## Features
 
 - **Custom Quiz Builder** — select specific topics and subtopics with per-subtopic question counts
