@@ -21,15 +21,21 @@ export default function MockSelector({ studentPhase }: Props) {
   const [launching, setLaunching] = useState<string | null>(null)
   const [exporting, setExporting] = useState<string | null>(null)
   const [loadingProgress, setLoadingProgress] = useState('')
+  const [loadError, setLoadError] = useState('')
 
   const saqEnabled = PHASE_CONFIG[studentPhase].saqEnabled
 
   useEffect(() => {
     setLoading(true)
-    fetchMocks(studentPhase).then(m => {
-      setMocks(m)
-      setLoading(false)
-    })
+    setLoadError('')
+    fetchMocks(studentPhase)
+      .then(setMocks)
+      .catch(err => {
+        console.error('Error loading mocks:', err)
+        setMocks([])
+        setLoadError('Unable to load mock papers')
+      })
+      .finally(() => setLoading(false))
   }, [studentPhase])
 
   useEffect(() => {
@@ -127,6 +133,12 @@ export default function MockSelector({ studentPhase }: Props) {
         <div className="mock-loading">
           <span className="pixel-label" style={{ fontSize: '7px', color: '#aaa' }}>
             LOADING MOCKS...
+          </span>
+        </div>
+      ) : loadError ? (
+        <div className="mock-loading">
+          <span className="pixel-label" style={{ fontSize: '7px', color: '#b44' }}>
+            {loadError}
           </span>
         </div>
       ) : (
