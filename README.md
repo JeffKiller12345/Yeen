@@ -1,6 +1,6 @@
 # ✿ YEEN ✿
 
-A medical quiz platform for Phase 2a students, inspired by Quesmed. Built with Next.js 16 and styled with a Y2K pixel aesthetic.
+A medical quiz platform for Pre-Clinical Medical Students at the University of Sheffield. Built with Next.js 16 and styled with a Y2K pixel aesthetic.
 
 ## Features
 
