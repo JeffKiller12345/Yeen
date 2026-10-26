@@ -2,6 +2,8 @@
 
 A medical quiz platform for Pre-Clinical Medical Students at the University of Sheffield. Built with Next.js 16 and styled with a Y2K pixel aesthetic.
 
+![Screenshot from website](public/images/Screenshot 2026-08-10 170148 (1).png)
+
 ## Features
 
 - **Custom Quiz Builder** — select specific topics and subtopics with per-subtopic question counts
