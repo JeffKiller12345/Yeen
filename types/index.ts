@@ -92,6 +92,7 @@ export interface HistoryStation {
   patient_sex: string | null
   patient_dob: string | null
   candidate_info: string | null
+  diagnosis_common: boolean | null
   setting: string | null
   presenting_complaint: string | null
   opening_statement: string | null

@@ -8,9 +8,15 @@ import type { HistoryStation, SeenMode } from '@/types'
 const STATION_COLUMNS = [
   'id', 'specialty', 'presentation', 'patient_name', 'patient_age', 'patient_sex',
   'patient_dob', 'candidate_info', 'setting', 'presenting_complaint',
+  'diagnosis_common',
   'opening_statement', 'patient_script', 'patient_follow_up_question',
   'examiner_questions', 'history_marks', 'question_marks',
 ].join(', ')
+
+function getCommonLabel(value: boolean | null | undefined): 'Common' | 'Rare' | null {
+  if (value === null || value === undefined) return null
+  return value ? 'Common' : 'Rare'
+}
 
 function parseJson<T>(value: T | string | null, fallback: T): T {
   if (typeof value !== 'string') return value ?? fallback
@@ -103,6 +109,11 @@ export default function StationList({ expanded, stationPool }: Props) {
           <span className="station-details">
             <strong>{station.patient_name}, {station.patient_age ?? 'age unavailable'}</strong>
             <span>{station.candidate_info || 'No candidate instructions yet.'}</span>
+            {getCommonLabel(station.diagnosis_common) && (
+              <span className="station-diagnosis-label">
+                {getCommonLabel(station.diagnosis_common)}
+              </span>
+            )}
           </span>
           <span className="station-action">{copiedId === station.id ? 'COPIED!' : 'COPY PROMPT'}</span>
         </button>
@@ -116,6 +127,7 @@ export default function StationList({ expanded, stationPool }: Props) {
         .station-details { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
         .station-details strong { font-family: var(--font-body); font-size: 13px; }
         .station-details span { white-space: pre-wrap; font-family: var(--font-body); font-size: 12px; line-height: 1.5; color: #555; }
+        .station-details .station-diagnosis-label { font-size: 10px; color: #999; }
         .station-action { flex-shrink: 0; font-family: var(--font-pixel); font-size: 6px; color: var(--pink-dark); }
         .station-status { margin: 0; padding: 14px 32px; font-family: var(--font-pixel); font-size: 7px; color: #999; }
         .station-error { color: #c62828; }
