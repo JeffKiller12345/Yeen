@@ -6,6 +6,8 @@ import { TOPICS_ORDER, TOPIC_ORDER } from '@/data/topicsOrder'
 import { getCachedTopicMeta } from '@/lib/topicCache'
 import type { StudentPhase } from '@/lib/phaseConfig'
 import { PHASE_CONFIG } from '@/lib/phaseConfig'
+import StationList from '@/components/StationList'
+import type { SeenMode } from '@/types'
 
 interface Selection {
   [topic: string]: { [subtopic: string]: number }
@@ -24,6 +26,7 @@ interface Props {
   onTopicsLoaded: (topics: Record<string, string[]>) => void
   questionType: 'mcq' | 'saq'
   studentPhase: StudentPhase
+  stationPool: SeenMode
 }
 
 function RingBadge({ seen, total, size = 'topic' }: {
@@ -74,7 +77,7 @@ function RingBadge({ seen, total, size = 'topic' }: {
   )
 }
 
-export default function TopicSelector({ onChange, onTopicsLoaded, questionType, studentPhase }: Props) {
+export default function TopicSelector({ onChange, onTopicsLoaded, questionType, studentPhase, stationPool }: Props) {
   const [topics, setTopics] = useState<Record<string, string[]>>({})
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [selections, setSelections] = useState<Selection>({})
@@ -82,6 +85,17 @@ export default function TopicSelector({ onChange, onTopicsLoaded, questionType, 
 
   useEffect(() => {
   const fetchTopics = async () => {
+    if (studentPhase === 'phase2b') {
+      const fixedTopics = Object.fromEntries(
+        (PHASE_CONFIG.phase2b.stationTopics ?? []).map(topic => [topic, []])
+      )
+      setTopics(fixedTopics)
+      onTopicsLoaded(fixedTopics)
+      setSelections({})
+      setCounts({})
+      return
+    }
+
     // getCachedTopicMeta handles all the pagination internally
     const allData = await getCachedTopicMeta(
       questionType === 'saq' ? PHASE_CONFIG[studentPhase].saqTable : PHASE_CONFIG[studentPhase].mcqTable
@@ -298,6 +312,61 @@ setCounts(newCounts)
           .count-input { font-family: var(--font-pixel); font-size: 9px; width: 48px; height: 28px; text-align: center; border: none; border-left: 1.5px solid var(--green-mid); border-right: 1.5px solid var(--green-mid); color: #2e7d32; background: white; -moz-appearance: textfield; }
           .count-input::-webkit-outer-spin-button, .count-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
           .count-input:focus { outline: none; background: var(--green-pale); }
+        `}</style>
+      </div>
+    )
+  }
+
+  if (studentPhase === 'phase2b') {
+    const toggleStationTopic = (topic: string) => {
+      setExpanded(current => ({ ...current, [topic]: !current[topic] }))
+      setSelections(current => {
+        const next = { ...current }
+        if (next[topic]) delete next[topic]
+        else next[topic] = { '': 1 }
+        return next
+      })
+    }
+
+    return (
+      <div className="topic-selector">
+        <div className="selector-header">
+          <span className="pixel-label">SELECT TOPICS ♡</span>
+          <span className="count-badge">{totalSelected} topics</span>
+        </div>
+
+        {(PHASE_CONFIG.phase2b.stationTopics ?? []).map(topic => {
+          const isExpanded = !!expanded[topic]
+          return (
+            <div key={topic} className="topic-group">
+              <div
+                className={`topic-row ${selections[topic] ? 'active' : ''}`}
+                onClick={() => toggleStationTopic(topic)}
+              >
+                <span className="toggle-icon">{isExpanded ? '▼' : '▶'}</span>
+                <span className="topic-name">{topic}</span>
+              </div>
+              {isExpanded && topic === 'Histories' && (
+                <StationList expanded stationPool={stationPool} />
+              )}
+              {isExpanded && topic !== 'Histories' && (
+                <div className="empty-topic">No stations yet</div>
+              )}
+            </div>
+          )
+        })}
+
+        <style>{`
+          .topic-selector { display: flex; flex-direction: column; gap: 0; margin: 16px 0; }
+          .selector-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--pink-mid); border: 2px solid var(--pink-dark); margin-bottom: 2px; }
+          .count-badge { font-family: var(--font-pixel); font-size: 7px; color: white; }
+          .topic-group { border: 2px solid var(--border-px); border-top: none; }
+          .topic-row { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: var(--cream); transition: background 0.1s; user-select: none; cursor: pointer; }
+          .topic-row:hover { background: var(--pink-light); }
+          .topic-row.active { background: var(--green-pale); border-left: 4px solid var(--green-mid); }
+          .toggle-icon { font-size: 8px; color: var(--pink-mid); font-family: var(--font-pixel); width: 12px; flex-shrink: 0; }
+          .topic-name { font-family: var(--font-body); font-weight: 700; font-size: 14px; flex: 1; }
+          .empty-topic { padding: 14px 32px; background: white; font-family: var(--font-body); font-size: 12px; color: #999; }
         `}</style>
       </div>
     )

@@ -83,6 +83,32 @@ export interface SAQQuestion {
 
 export type QuestionType = 'mcq' | 'saq'
 
+export interface HistoryStation {
+  id: string
+  specialty: string | null
+  presentation: string | null
+  patient_name: string
+  patient_age: number | string | null
+  patient_sex: string | null
+  patient_dob: string | null
+  candidate_info: string | null
+  setting: string | null
+  presenting_complaint: string | null
+  opening_statement: string | null
+  patient_script: string | null
+  patient_follow_up_question: string | null
+  examiner_questions: Array<{
+    question: string
+    answer: string
+    question_type: string
+  }>
+  history_marks: string[]
+  question_marks: Array<{
+    mark: string
+    linked_question: number | string
+  }>
+}
+
 export interface SAQResult {
   question: SAQQuestion
   userAnswer: string

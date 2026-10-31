@@ -267,6 +267,7 @@ export default function Dashboard() {
           key={seenResetKey}
           questionType={questionType}
           studentPhase={studentPhase}
+          stationPool={seenMode}
           onChange={setSelections}
           onTopicsLoaded={setTopics}
         />
@@ -279,7 +280,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="dashboard-actions">
+        {studentPhase !== 'phase2b' && <div className="dashboard-actions">
           <div className="action-primary">
             <button
               className="btn-kawaii"
@@ -303,9 +304,9 @@ export default function Dashboard() {
               {isExporting ? '⏳ EXPORTING...' : '⬇ EXPORT PDF'}
             </button>
           </div>
-        </div>
+          </div>}
 
-        <MockSelector studentPhase={studentPhase} />
+  {studentPhase !== 'phase2b' && <MockSelector studentPhase={studentPhase} />}
       </div>
 
       <style jsx>{`
