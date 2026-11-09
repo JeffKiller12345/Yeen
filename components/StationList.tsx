@@ -3,14 +3,24 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { buildHistoryStationPrompt } from '@/lib/stationPrompt'
-import type { HistoryStation, SeenMode } from '@/types'
+import { buildRiskStationPrompt } from '@/lib/riskStationPrompt'
+import type { HistoryStation, RiskStation, SeenMode } from '@/types'
 
-const STATION_COLUMNS = [
+const HISTORY_COLUMNS = [
   'id', 'specialty', 'presentation', 'patient_name', 'patient_age', 'patient_sex',
   'patient_dob', 'candidate_info', 'setting', 'presenting_complaint',
   'diagnosis_common',
   'opening_statement', 'patient_script', 'patient_follow_up_question',
   'examiner_questions', 'history_marks', 'question_marks',
+].join(', ')
+
+const RISK_COLUMNS = [
+  'id', 'model', 'station_type', 'specialty', 'presentation', 'presentation_common',
+  'diagnosis', 'diagnosis_common', 'question_types', 'patient_name', 'patient_age',
+  'patient_sex', 'patient_dob', 'candidate_info', 'patient_info', 'examiner_info',
+  'setting', 'presenting_complaint', 'opening_statement', 'patient_script',
+  'patient_follow_up_question', 'examiner_questions', 'history_marks', 'question_marks',
+  'scoring_working',
 ].join(', ')
 
 function getCommonLabel(value: boolean | null | undefined): 'Common' | 'Rare' | null {
@@ -39,13 +49,26 @@ function normaliseStation(row: Record<string, unknown>): HistoryStation {
   } as HistoryStation
 }
 
+function normaliseRiskStation(row: Record<string, unknown>): RiskStation {
+  return {
+    ...normaliseStation(row),
+    station_type: row.station_type == null ? null : String(row.station_type),
+    model: row.model == null ? null : String(row.model),
+    presentation_common: Boolean(row.presentation_common),
+    diagnosis: row.diagnosis == null ? null : String(row.diagnosis),
+    question_types: parseJson(row.question_types as string[], []),
+    scoring_working: row.scoring_working == null ? null : String(row.scoring_working),
+  } as RiskStation
+}
+
 interface Props {
   expanded: boolean
   stationPool: SeenMode
+  kind?: 'history' | 'risk'
 }
 
-export default function StationList({ expanded, stationPool }: Props) {
-  const [stations, setStations] = useState<HistoryStation[]>([])
+export default function StationList({ expanded, stationPool, kind = 'history' }: Props) {
+  const [stations, setStations] = useState<Array<HistoryStation | RiskStation>>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
@@ -58,26 +81,30 @@ export default function StationList({ expanded, stationPool }: Props) {
       setLoading(true)
       setError('')
       const { data, error: fetchError } = await supabase
-        .from('2b_histories')
-        .select(STATION_COLUMNS)
+        .from(kind === 'risk' ? 'risk_station_bank' : '2b_histories')
+        .select(kind === 'risk' ? RISK_COLUMNS : HISTORY_COLUMNS)
         .order('id')
 
       if (cancelled) return
       if (fetchError) {
-        setError('Unable to load history stations.')
+        setError(`Unable to load ${kind === 'risk' ? 'risk' : 'history'} stations.`)
         setStations([])
       } else {
-        setStations((data ?? []).map(row => normaliseStation(row as unknown as Record<string, unknown>)))
+        setStations((data ?? []).map(row => kind === 'risk'
+          ? normaliseRiskStation(row as unknown as Record<string, unknown>)
+          : normaliseStation(row as unknown as Record<string, unknown>)))
       }
       setLoading(false)
     }
 
     fetchStations()
     return () => { cancelled = true }
-  }, [expanded])
+  }, [expanded, kind])
 
-  const copyPrompt = async (station: HistoryStation) => {
-    const prompt = buildHistoryStationPrompt(station)
+  const copyPrompt = async (station: HistoryStation | RiskStation) => {
+    const prompt = kind === 'risk'
+      ? buildRiskStationPrompt(station as RiskStation)
+      : buildHistoryStationPrompt(station)
     try {
       await navigator.clipboard.writeText(prompt)
     } catch {
@@ -108,6 +135,7 @@ export default function StationList({ expanded, stationPool }: Props) {
         <button key={station.id} className="station-row" onClick={() => copyPrompt(station)}>
           <span className="station-details">
             <strong>{station.patient_name}, {station.patient_age ?? 'age unavailable'}</strong>
+            {kind === 'risk' && <span>{station.presentation || 'Risk assessment'}</span>}
             <span>{station.candidate_info || 'No candidate instructions yet.'}</span>
             {getCommonLabel(station.diagnosis_common) && (
               <span className="station-diagnosis-label">
