@@ -7,6 +7,7 @@ import { getCachedTopicMeta } from '@/lib/topicCache'
 import type { StudentPhase } from '@/lib/phaseConfig'
 import { PHASE_CONFIG } from '@/lib/phaseConfig'
 import StationList from '@/components/StationList'
+import ExaminationGenerator from '@/components/ExaminationGenerator'
 import type { SeenMode } from '@/types'
 
 interface Selection {
@@ -349,7 +350,13 @@ setCounts(newCounts)
               {isExpanded && topic === 'Histories' && (
                 <StationList expanded stationPool={stationPool} />
               )}
-              {isExpanded && topic !== 'Histories' && (
+              {isExpanded && topic === 'Assessment of Risk Factors' && (
+                <StationList expanded stationPool={stationPool} kind="risk" />
+              )}
+              {isExpanded && topic === 'Examinations' && (
+                <ExaminationGenerator />
+              )}
+              {isExpanded && !['Histories', 'Assessment of Risk Factors', 'Examinations'].includes(topic) && (
                 <div className="empty-topic">No stations yet</div>
               )}
             </div>

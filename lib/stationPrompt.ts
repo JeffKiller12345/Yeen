@@ -51,7 +51,12 @@ ${examinerQuestions}
 === PART 3: MARKING AND FEEDBACK ===
 Once I have answered all the examiner questions, mark my performance using the mark sheets below. Only give credit for things I actually asked or said during the role-play and examiner questions.
 
-History-taking mark sheet (1 mark per item):
+The station total is exactly 25 marks:
+- Candidate introduction, explains the purpose, and obtains consent: 1 mark.
+- Patient/history section: 21 marks maximum. Award one mark for each listed history item below, then use any remaining marks in this section for focused history coverage, clear structure, appropriate clarification, and a concise summary/closure. Do not award more than 21 patient/history marks.
+- Examiner questions: 3 marks, using the examiner mark sheet below. Cap this section at 3 marks.
+
+Patient/history mark sheet:
 ${historyMarks}
 
 Examiner questions mark sheet (1 mark per item):
@@ -62,7 +67,7 @@ ${modelAnswers}
 
 Then give me:
 1. A tick/cross for every mark sheet item, with a one-line reason for any I missed.
-2. My score for the history section, my score for the examiner questions section, and my total.
+2. My introduction score, patient/history score, examiner-question score, and exact total out of 25.
 3. Specific, constructive feedback: what I did well, what I missed, how I could improve my structure, communication and empathy, and any important questions I should have asked.
 4. A suggested model summary and diagnosis/differentials for this case.
 

@@ -110,6 +110,15 @@ export interface HistoryStation {
   }>
 }
 
+export interface RiskStation extends HistoryStation {
+  station_type: string | null
+  model: string | null
+  presentation_common: boolean | null
+  diagnosis: string | null
+  question_types: string[]
+  scoring_working: string | null
+}
+
 export interface SAQResult {
   question: SAQQuestion
   userAnswer: string
